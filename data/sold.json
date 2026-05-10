@@ -1,0 +1,23 @@
+[
+  {
+    "id": "sold-1",
+    "title": "Rodinný dům u lesa",
+    "location": "Vysočina",
+    "priceLabel": "prodáno nad výchozí cenu",
+    "image": "https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80"
+  },
+  {
+    "id": "sold-2",
+    "title": "Designový byt v centru",
+    "location": "Jihlava",
+    "priceLabel": "rychlý prodej — 21 dní",
+    "image": "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80"
+  },
+  {
+    "id": "sold-3",
+    "title": "Investiční apartmán",
+    "location": "Třebíč",
+    "priceLabel": "silný zájem — více nabídek",
+    "image": "https://images.unsplash.com/photo-1600573472592-401b489a3cdc?auto=format&fit=crop&w=800&q=80"
+  }
+]

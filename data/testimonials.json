@@ -1,0 +1,42 @@
+[
+  {
+    "id": "t1",
+    "name": "Lucie & Martin",
+    "role": "prodej rodinného domu",
+    "photo": "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=600&q=80",
+    "quote": "Monika vedla celý prodej jako orchestr — klidně, srozumitelně a s citlivým marketingem. Koupě proběhla bez zbytečného stresu a výsledek předčil naše očekávání.",
+    "video": false
+  },
+  {
+    "id": "t2",
+    "name": "Petr Horák",
+    "role": "investiční byt",
+    "photo": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=600&q=80",
+    "quote": "Nejvíc oceňuji přehled v číslech z bankovní praxe a zároveň osobní přístup. Nebyl jsem jen další lead — opravdu jsme řešili strategii.",
+    "video": false
+  },
+  {
+    "id": "t3",
+    "name": "Veronika K.",
+    "role": "pronájem prémiového bytu",
+    "photo": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=600&q=80",
+    "quote": "Prezentace na sociálních sítích přivedla správné zájemce během pár dní. Profesionální fotky a video dělají obrovský rozdíl.",
+    "video": true
+  },
+  {
+    "id": "t4",
+    "name": "Tomáš M.",
+    "role": "prodej bytu v Brně",
+    "photo": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80",
+    "quote": "Domluva byla rychlá, žádné prázdné sliby. Když něco potřebovalo doladit, ozvala se sama.",
+    "video": false
+  },
+  {
+    "id": "t5",
+    "name": "Eva & David",
+    "role": "koupě rodinného domu",
+    "photo": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80",
+    "quote": "Měli jsme obavy z první koupě — Monika nám vše vysvětlila v klidu a krok za krokem.",
+    "video": false
+  }
+]

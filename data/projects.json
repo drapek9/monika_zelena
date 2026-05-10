@@ -1,0 +1,26 @@
+[
+  {
+    "id": "rezidence-zelena",
+    "title": "Rezidence Na Vyhlídce",
+    "location": "Jihlava",
+    "image": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
+    "summary": "Osm prémiových jednotek s terasami a výhledem na město. Aktuálně dokončujeme interiéry.",
+    "externalUrl": "https://hvreality.cz/"
+  },
+  {
+    "id": "vily-havlickuv",
+    "title": "Vily u řeky",
+    "location": "Havlíčkův Brod",
+    "image": "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80",
+    "summary": "Rodinné domy s nízkou energetickou náročností a architektonicky čistým řešením.",
+    "externalUrl": "https://hvreality.cz/"
+  },
+  {
+    "id": "loft-trebic",
+    "title": "Lofty Špitálka",
+    "location": "Třebíč",
+    "image": "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=80",
+    "summary": "Konverze historické budovy na loftové byty s výraznou prezentací na sociálních sítích.",
+    "externalUrl": "https://hvreality.cz/"
+  }
+]

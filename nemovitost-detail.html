@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Detail nemovitosti — galerie, video, mapa, kontakt na makléřku." />
+    <title>Detail nemovitosti | Monika Zelena</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Libre+Bodoni:ital,wght@0,400..700;1,400..700&family=Montserrat:wght@300;400;500;600;700&family=Poppins:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body>
+    <div id="header-mount"></div>
+    <main id="main">
+      <section class="section" style="padding-top: calc(var(--header-h) + 3rem)">
+        <div class="container">
+          <div class="detail-hero">
+            <div data-reveal>
+              <div class="gallery-main">
+                <img id="gallery-main-img" src="" alt="Hlavní fotografie nemovitosti" width="1200" height="750" />
+              </div>
+              <div class="gallery-thumbs" id="gallery-thumbs"></div>
+              <button type="button" class="btn btn--outline-dark mt-sm" id="detail-video-btn" hidden>Přehrát video prohlídku</button>
+            </div>
+            <div data-reveal>
+              <p class="eyebrow" id="detail-loc">—</p>
+              <h1 id="detail-title">Načítám…</h1>
+              <p class="lead" id="detail-price" style="font-family: var(--font-display); font-size: 1.75rem; color: var(--c-ink)">—</p>
+              <p id="detail-desc" style="color: var(--c-muted)"></p>
+              <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem">
+                <a href="kontakt.html" class="btn btn--primary">Sjednat prohlídku</a>
+                <a
+                  id="detail-hv-link"
+                  class="btn btn--outline-dark"
+                  href="https://hvreality.cz/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  hidden
+                  >Kompletní inzerát na HV Reality</a
+                >
+                <a href="nemovitosti.html" class="btn btn--outline-dark">Zpět na nabídku</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="map-embed mt-md" data-reveal style="margin-top: 3rem">
+            <iframe
+              title="Mapa lokality"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              src="about:blank"
+            ></iframe>
+          </div>
+        </div>
+      </section>
+    </main>
+    <div id="footer-mount"></div>
+
+    <div class="lightbox" id="video-lightbox" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Video přehrávač">
+      <div class="lightbox__inner">
+        <button type="button" class="lightbox__close" id="lightbox-close" aria-label="Zavřít">✕</button>
+        <video id="lightbox-video" controls playsinline preload="metadata"></video>
+      </div>
+    </div>
+
+    <script src="assets/js/site.js" defer></script>
+  </body>
+</html>

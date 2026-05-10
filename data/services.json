@@ -1,0 +1,32 @@
+[
+  {
+    "slug": "prodej",
+    "title": "Prodej nemovitostí",
+    "short": "Strategie, prezentace a vedení obchodu od první schůzky po předání klíčů.",
+    "icon": "home"
+  },
+  {
+    "slug": "pronajem",
+    "title": "Pronájem nemovitostí",
+    "short": "Bezpečný výběr nájemníků, smluvní rámec a stabilní pronájem bez zbytečných starostí.",
+    "icon": "key"
+  },
+  {
+    "slug": "odhad",
+    "title": "Odhad ceny",
+    "short": "Transparentní ocenění na základě dat z lokality, segmentu a aktuální poptávky.",
+    "icon": "chart"
+  },
+  {
+    "slug": "pravo",
+    "title": "Právní servis",
+    "short": "Spolupráce s advokátní kanceláří — smlouvy a dokumentace bez nepříjemných překvapení.",
+    "icon": "scale"
+  },
+  {
+    "slug": "developerske",
+    "title": "Developerské projekty",
+    "short": "Prezentace projektů, práce s databází kupujících a konzistentní marketing napříč kanály.",
+    "icon": "building"
+  }
+]
