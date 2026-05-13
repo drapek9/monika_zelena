@@ -16,14 +16,14 @@
   {
     "id": "hv-cb-prodej-1kk",
     "title": "Prodej bytu 1+kk 26 m² – České Budějovice",
-    "location": "České Budějovice — Viladomy Dobrovodská",
+    "location": "České Budějovice - Viladomy Dobrovodská",
     "price": 3264000,
     "priceKind": "prodej",
     "type": "byt",
     "image": "images/1_kk.webp",
     "gallery": ["images/1_kk.webp"],
     "video": "",
-    "description": "Nový moderní byt 1+kk v projektu Viladomy Dobrovodská (5. NP s výtahem, aktuálně ve výstavbě). Energetická třída B, nízké provozní náklady, podlahové topení. Možnost dokoupit venkovní nebo kryté parkovací stání. Klidná rezidenční část s dobrou dostupností MHD a centra. Předpokládané dokončení červen 2026. Neplatíte provizi — koupě přímo od developera.",
+    "description": "Nový moderní byt 1+kk v projektu Viladomy Dobrovodská (5. NP s výtahem, aktuálně ve výstavbě). Energetická třída B, nízké provozní náklady, podlahové topení. Možnost dokoupit venkovní nebo kryté parkovací stání. Klidná rezidenční část s dobrou dostupností MHD a centra. Předpokládané dokončení červen 2026. Neplatíte provizi - koupě přímo od developera.",
     "mapQuery": "Dobrovodská, České Budějovice",
     "externalUrl": "https://hvreality.cz/prodej-nemovitosti/prodej-bytu-1-kk-ceske-budejovice-okres-ceske-budejovice-prodej-byty-1-kk-26-m2-ceske-budejovice-908/"
   },
@@ -37,7 +37,7 @@
     "image": "images/3_kk.webp",
     "gallery": ["images/3_kk.webp"],
     "video": "",
-    "description": "Moderní byt 3+kk s vlastní terasou (17 m²) v novostavbě řadového domu — horní patro, klidná lokalita Pančava. Obývací část s kuchyňským koutem, ložnice, pokoj, koupelna s WC a samostatná toaleta. 1 parkovací místo před domem. Nájemné 17 500 Kč/měsíc, zálohy dle domluvy, kauce 2× nájem. Požadavky: bez zvířat, nekuřáci, dlouhodobý nájem. K nastěhování ihned.",
+    "description": "Moderní byt 3+kk s vlastní terasou (17 m²) v novostavbě řadového domu - horní patro, klidná lokalita Pančava. Obývací část s kuchyňským koutem, ložnice, pokoj, koupelna s WC a samostatná toaleta. 1 parkovací místo před domem. Nájemné 17 500 Kč/měsíc, zálohy dle domluvy, kauce 2× nájem. Požadavky: bez zvířat, nekuřáci, dlouhodobý nájem. K nastěhování ihned.",
     "mapQuery": "Na Nivách, Jihlava",
     "externalUrl": "https://hvreality.cz/pronajem-nemovitosti/pronajem-bytu-3-kk-jihlava-okres-jihlava-pronajem-bytu-3-kk-68-m2-s-terasou-jihlava-898/"
   }

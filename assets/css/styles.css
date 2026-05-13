@@ -1,4 +1,4 @@
-/* Monika Zelena — luxury minimal real estate
+/* Monika Zelena - luxury minimal real estate
    Nadpisy: Libre Bodoni (webová alternativa k Bauer Bodoni) */
 
 :root {
@@ -186,7 +186,7 @@ p.lead {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-/* Úvodní stránka — světlý hero: tmavý text v hlavičce, dokud není scroll */
+/* Úvodní stránka - světlý hero: tmavý text v hlavičce, dokud není scroll */
 body.has-light-hero .site-header:not(.is-scrolled) .logo {
   color: var(--c-ink);
   text-shadow: none;
@@ -264,7 +264,7 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   padding-block: 0.25rem;
 }
 
-.nav-list a::after {
+.nav-list a:not(.btn)::after {
   content: "";
   position: absolute;
   left: 0;
@@ -275,8 +275,8 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   transition: width 0.35s var(--ease-out);
 }
 
-.nav-list a:hover::after,
-.nav-list a.is-active::after {
+.nav-list a:not(.btn):hover::after,
+.nav-list a:not(.btn).is-active::after {
   width: 100%;
 }
 
@@ -342,7 +342,7 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   font-size: 0.72rem;
 }
 
-/* Hero (úvodní stránka — osobní, bez videa / fotky nemovitosti) */
+/* Hero (úvodní stránka - osobní, bez videa / fotky nemovitosti) */
 .hero {
   position: relative;
   min-height: 100svh;
@@ -367,7 +367,7 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
     linear-gradient(168deg, #161616 0%, #0a0a0a 48%, #151515 100%);
 }
 
-/* Světlý hero — neutrální podklad, jen náznak akcentu (zlatá hlavně na CTA) */
+/* Světlý hero - neutrální podklad, jen náznak akcentu (zlatá hlavně na CTA) */
 .hero--personal .hero__bg {
   background:
     radial-gradient(ellipse 92% 62% at 88% 10%, rgba(244, 193, 5, 0.09), transparent 54%),
@@ -425,7 +425,7 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   margin-bottom: 1.75rem;
 }
 
-/* Logo kanceláře — bez rámečku / kartičky, jen odkaz */
+/* Logo kanceláře - bez rámečku / kartičky, jen odkaz */
 .hero__hv-logo {
   display: inline-block;
   margin-top: 0;
@@ -569,38 +569,6 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   object-fit: cover;
 }
 
-.highlights {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.highlight {
-  padding: 1.25rem;
-  border-radius: var(--radius-md);
-  background: var(--c-white);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow: var(--shadow-card);
-  transition: transform 0.35s var(--ease-out), border-color 0.35s var(--ease-out);
-}
-
-.highlight:hover {
-  transform: translateY(-4px);
-  border-color: rgba(244, 193, 5, 0.45);
-}
-
-.highlight h4 {
-  font-size: 1rem;
-  margin: 0 0 0.35rem;
-}
-
-.highlight p {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--c-muted);
-}
-
 /* Stats band */
 .stats-band {
   display: grid;
@@ -678,12 +646,12 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   background: var(--c-white);
   border: 1px solid rgba(0, 0, 0, 0.06);
   box-shadow: var(--shadow-card);
-  transition: transform 0.45s var(--ease-out), box-shadow 0.45s var(--ease-out);
+  transition: transform 0.28s var(--ease-out), box-shadow 0.28s var(--ease-out);
 }
 
 .property-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 28px 72px rgba(0, 0, 0, 0.14);
+  transform: translateY(-2px);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.1);
 }
 
 .property-card__media {
@@ -695,11 +663,11 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.6s var(--ease-out);
+  transition: transform 0.35s var(--ease-out);
 }
 
 .property-card:hover .property-card__media img {
-  transform: scale(1.06);
+  transform: scale(1.02);
 }
 
 .property-card__body {
@@ -736,6 +704,7 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   position: absolute;
   inset: 0;
   z-index: 2;
+  cursor: pointer;
 }
 
 .property-card__tag {
@@ -820,6 +789,17 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 
 /* Presentation section */
 .presentation-layout {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.75rem, 4vw, 2.75rem);
+  align-items: stretch;
+}
+
+.presentation-layout__intro .lead {
+  margin-bottom: 0;
+}
+
+.presentation-layout__row {
   display: grid;
   grid-template-columns: 1.15fr 1fr;
   gap: clamp(2rem, 5vw, 3.5rem);
@@ -893,27 +873,44 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 
 .feature-mini h4 {
   font-size: 0.95rem;
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.5rem;
 }
 
 .feature-mini p {
   margin: 0;
   font-size: 0.85rem;
+  line-height: 1.55;
   color: var(--c-muted);
 }
 
-.quote-block {
-  margin-top: 2rem;
-  padding-left: 1.25rem;
-  border-left: 3px solid var(--c-accent);
+/* Kompaktnější karty jen u prezentační sekce (méně výšky vpravo od videa) */
+.presentation-layout .feature-mini-grid {
+  gap: 0.9rem;
 }
 
-.quote-block p {
-  font-family: var(--font-display);
-  font-size: 1.35rem;
-  line-height: 1.45;
-  margin: 0;
-  color: var(--c-ink);
+.presentation-layout .feature-mini {
+  padding: 0.7rem 0.75rem;
+  border-radius: var(--radius-sm);
+}
+
+.presentation-layout .feature-mini:hover {
+  transform: translateY(-2px);
+}
+
+.presentation-layout .feature-mini h4 {
+  font-size: 0.82rem;
+  margin: 0 0 0.28rem;
+  line-height: 1.25;
+}
+
+.presentation-layout .feature-mini p {
+  font-size: 0.76rem;
+  line-height: 1.42;
+}
+
+#prezentace.section--warm .presentation-layout .feature-mini {
+  background: var(--c-white);
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 /* Services grid */
@@ -1020,12 +1017,12 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   padding: 1.5rem 1.5rem 1.75rem;
 }
 
-/* Reference sekce na homepage — stejné pozadí jako zbytek bílých bloků (stín karet dřív vypadal jako šedá deska) */
+/* Reference sekce na homepage - stejné pozadí jako zbytek bílých bloků (stín karet dřív vypadal jako šedá deska) */
 section[aria-labelledby="ref-heading"] {
   background: var(--c-white);
 }
 
-/* Testimonials — žádný společný „panel“ za kartami, jen samotné .testimonial-card */
+/* Testimonials - žádný společný „panel“ za kartami, jen samotné .testimonial-card */
 .testimonial-slider {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
@@ -1169,26 +1166,6 @@ section[aria-labelledby="ref-heading"] {
   color: var(--c-muted);
   margin-bottom: 2rem;
   max-width: 65ch;
-}
-
-.social-quick-links {
-  margin-top: 1.75rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.social-quick-links__label {
-  font-family: var(--font-alt);
-  font-size: 0.72rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--c-soft);
-  display: block;
-  margin-bottom: 0.85rem;
-}
-
-.social-row--page {
-  gap: 0.75rem;
 }
 
 /* Lead form */
@@ -1381,7 +1358,7 @@ section[aria-labelledby="ref-heading"] {
   height: 22px;
 }
 
-/* TikTok jako obrázek (sekce Aktuálně… / kontakt) — SVG má tmavou výplň */
+/* TikTok jako obrázek (sekce Aktuálně… / kontakt) - SVG má tmavou výplň */
 .social-icon__tiktok-img {
   object-fit: contain;
 }
@@ -1427,6 +1404,12 @@ section[aria-labelledby="ref-heading"] {
 .page-hero h1 {
   color: var(--c-white);
   margin-bottom: 0.75rem;
+}
+
+/* Prázdný pás pod page-hero (stránky bez hlavního obsahu) */
+.page-body-spacer {
+  min-height: clamp(14rem, 32vh, 22rem);
+  background: var(--c-white);
 }
 
 /* Lightbox */
@@ -1615,7 +1598,7 @@ section[aria-labelledby="ref-heading"] {
   .split {
     grid-template-columns: 1fr;
   }
-  .presentation-layout {
+  .presentation-layout__row {
     grid-template-columns: 1fr;
   }
   .footer-grid {
@@ -1664,9 +1647,6 @@ section[aria-labelledby="ref-heading"] {
     grid-template-columns: 1fr;
   }
   .sold-grid {
-    grid-template-columns: 1fr;
-  }
-  .highlights {
     grid-template-columns: 1fr;
   }
   .feature-mini-grid {

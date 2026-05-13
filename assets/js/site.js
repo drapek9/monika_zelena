@@ -1,5 +1,5 @@
 /**
- * Monika Zelena — vanilla JS: navigace, reveal, statistiky, nemovitosti, formulář, slider, lightbox
+ * Monika Zelena - vanilla JS: navigace, reveal, statistiky, nemovitosti, formulář, slider, lightbox
  */
 
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -86,11 +86,11 @@ async function loadPartial(id, url) {
       if (y) y.textContent = String(new Date().getFullYear());
     }
   } catch {
-    console.warn("Nepodařilo se načíst partial:", url, "— použijte lokální server (např. npx serve).");
+    console.warn("Nepodařilo se načíst partial:", url, "- použijte lokální server (např. npx serve).");
   }
 }
 
-/* ----- Footer sociální sítě (DOM API — innerHTML + dlouhé SVG v některých prohlížečích usekne uzly) ----- */
+/* ----- Footer sociální sítě (DOM API - innerHTML + dlouhé SVG v některých prohlížečích usekne uzly) ----- */
 async function initFooterSocialLinks() {
   const row = document.getElementById("footer-social-row");
   if (!row) return;
@@ -201,7 +201,7 @@ function formatPrice(n) {
   );
 }
 
-/** Cena na kartě a detailu — prodej (Kč) vs pronájem (Kč/měsíc) */
+/** Cena na kartě a detailu - prodej (Kč) vs pronájem (Kč/měsíc) */
 function formatPropertyPrice(p) {
   const num = new Intl.NumberFormat("cs-CZ", { maximumFractionDigits: 0 }).format(p.price);
   if (p.priceKind === "pronajem") {
@@ -232,10 +232,13 @@ async function loadPropertiesList(containerSelector, options = {}) {
           <p class="property-card__loc">${p.location}</p>
           <h3 class="mt-sm mb-0" style="font-size:1.05rem">${p.title}</h3>
         </div>
-        <a class="property-card__link" href="nemovitost-detail.html?id=${encodeURIComponent(p.id)}" aria-label="Detail: ${p.title}"></a>
+        <a class="property-card__link" href="#" aria-label="Nemovitost: ${p.title}"></a>
       </article>`
       )
       .join("");
+    root.querySelectorAll(".property-card__link").forEach((a) => {
+      a.addEventListener("click", (e) => e.preventDefault());
+    });
     return list;
   } catch (e) {
     root.innerHTML = `<p role="alert">Obsah se nepodařilo načíst. Spusťte web přes lokální server.</p>`;
@@ -710,7 +713,7 @@ async function boot() {
   const path = (window.location.pathname.split("/").pop() || "index.html").split("?")[0];
 
   if (path === "index.html" || path === "") {
-    await loadPropertiesList("#property-grid-home", { limit: 3 });
+    await loadPropertiesList("#property-grid-home");
     await loadSold("#sold-grid-home");
     await loadProjects("#dev-grid-home", 3);
     await loadServices("#services-grid-home", 4);
@@ -850,7 +853,7 @@ async function initServiceDetail() {
       <p class="eyebrow">Služba</p>
       <h1>${s.title}</h1>
       <p class="lead">${s.short}</p>
-      <p>Individuální strategie pro Jihlavu a Vysočinu — od první konzultace po předání klíčů. Kombinuji zkušenosti z financí s moderním marketingem a prémiovou prezentací nemovitosti.</p>
+      <p>Individuální strategie pro Jihlavu a Vysočinu - od první konzultace po předání klíčů. Kombinuji zkušenosti z financí s moderním marketingem a prémiovou prezentací nemovitosti.</p>
       <ul style="margin-top:1.5rem;padding-left:1.2rem;color:var(--c-muted)">
         <li>Transparentní komunikace a férové nastavení očekávání</li>
         <li>Profesionální foto, video a případně dronové záběry</li>
