@@ -1,5 +1,5 @@
 /**
- * Monika Zelena - vanilla JS: navigace, reveal, statistiky, nemovitosti, formulář, slider, lightbox
+ * Monika Zelená - vanilla JS: navigace, reveal, statistiky, nemovitosti, formulář, slider, lightbox
  */
 
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -840,7 +840,7 @@ async function initPropertyDetail() {
     const list = await res.json();
     const p = list.find((x) => x.id === id) || list[0];
     if (!p) return;
-    document.title = `${p.title} | Monika Zelena`;
+    document.title = `${p.title} | Monika Zelená`;
     if (titleEl) titleEl.textContent = p.title;
     if (priceEl) priceEl.textContent = formatPropertyPrice(p);
     if (locEl) locEl.textContent = p.location;
@@ -926,7 +926,7 @@ async function initServiceDetail() {
     const list = await res.json();
     const s = list.find((x) => x.slug === slug) || list[0];
     if (!root || !s) return;
-    document.title = `${s.title} | Monika Zelena`;
+    document.title = `${s.title} | Monika Zelená`;
     root.innerHTML = `
       <p class="eyebrow">Služba</p>
       <h1>${s.title}</h1>
