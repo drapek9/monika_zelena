@@ -251,28 +251,32 @@
       <section class="section section--warm" aria-labelledby="social-heading">
         <div class="container">
           <div data-reveal>
-            <p class="eyebrow">Obsah</p>
+            <p class="eyebrow">Sociální sítě</p>
             <h2 id="social-heading">Aktuálně na sociálních sítích</h2>
             <p class="social-embed-note">
-              Ukázka vizuálního gridu - v produkci zde budou embedy Instagram Reels / TikTok (iframe nebo API). Pro demo používám statické snímky s hover efektem.
+              Ukázka videí ze sociálních sítí.
             </p>
           </div>
-          <div class="social-masonry" data-reveal>
-            <div class="social-tile social-tile--tall">
-              <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=600&q=80" alt="" loading="lazy" />
-              <div class="social-tile__overlay"><span class="social-play" aria-hidden="true">▶</span></div>
+        </div>
+        <div class="social-videos-strip" data-reveal>
+          <div class="social-videos-slider">
+            <div class="social-videos-slider__nav">
+              <button type="button" class="t-nav-btn" id="social-v-prev" aria-controls="social-videos-viewport" aria-label="Předchozí video">←</button>
+              <button type="button" class="t-nav-btn" id="social-v-next" aria-controls="social-videos-viewport" aria-label="Další video">→</button>
             </div>
-            <div class="social-tile">
-              <img src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=600&q=80" alt="" loading="lazy" />
-              <div class="social-tile__overlay"><span class="social-play" aria-hidden="true">▶</span></div>
-            </div>
-            <div class="social-tile">
-              <img src="https://images.unsplash.com/photo-1600573472592-401b489a3cdc?auto=format&fit=crop&w=600&q=80" alt="" loading="lazy" />
-              <div class="social-tile__overlay"><span class="social-play" aria-hidden="true">▶</span></div>
-            </div>
-            <div class="social-tile social-tile--tall">
-              <img src="https://images.unsplash.com/photo-1600607687644-c7171b42498f?auto=format&fit=crop&w=600&q=80" alt="" loading="lazy" />
-              <div class="social-tile__overlay"><span class="social-play" aria-hidden="true">▶</span></div>
+            <div
+              class="social-videos-viewport"
+              id="social-videos-viewport"
+              tabindex="0"
+              role="region"
+              aria-label="Videa ze sociálních sítí — posuv šipkami nebo kolečkem"
+            >
+              <div class="social-videos-row">
+                <video controls playsinline preload="metadata" src="videa/jedna.mp4" title="Ukázka 1"></video>
+                <video controls playsinline preload="metadata" src="videa/dva.mp4" title="Ukázka 2"></video>
+                <video controls playsinline preload="metadata" src="videa/tri.mp4" title="Ukázka 3"></video>
+                <video controls playsinline preload="metadata" src="videa/ctyri.mp4" title="Ukázka 4"></video>
+              </div>
             </div>
           </div>
         </div>

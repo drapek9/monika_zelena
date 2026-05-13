@@ -545,6 +545,83 @@ async function loadTestimonials() {
   }
 }
 
+/* ----- Sociální videa — jeden řádek, horizontální posuv ----- */
+function initSocialVideosCarousel() {
+  const viewport = document.getElementById("social-videos-viewport");
+  const prevBtn = document.getElementById("social-v-prev");
+  const nextBtn = document.getElementById("social-v-next");
+  if (!viewport) return;
+
+  const row = viewport.querySelector(".social-videos-row");
+  if (!row) return;
+
+  const getVideos = () => [...row.querySelectorAll("video")];
+
+  function anchorIndex() {
+    const videos = getVideos();
+    if (!videos.length) return 0;
+    const sl = viewport.scrollLeft;
+    let idx = 0;
+    for (let i = 0; i < videos.length; i++) {
+      if (videos[i].offsetLeft <= sl + 8) idx = i;
+    }
+    return idx;
+  }
+
+  function scrollToIndex(i) {
+    const videos = getVideos();
+    const v = videos[i];
+    if (!v) return;
+    const maxSL = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+    const left = Math.min(Math.max(0, v.offsetLeft), maxSL);
+    viewport.scrollTo({
+      left,
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+    });
+  }
+
+  function updateNav() {
+    const eps = 6;
+    const { scrollLeft, clientWidth, scrollWidth } = viewport;
+    const allFit = scrollWidth <= clientWidth + eps;
+    const atStart = scrollLeft <= eps;
+    const atEnd = scrollLeft + clientWidth >= scrollWidth - eps;
+
+    if (prevBtn) prevBtn.disabled = allFit || atStart;
+    if (nextBtn) nextBtn.disabled = allFit || atEnd;
+  }
+
+  function go(delta) {
+    const videos = getVideos();
+    if (!videos.length) return;
+    const i = anchorIndex();
+    const target = Math.min(videos.length - 1, Math.max(0, i + delta));
+    scrollToIndex(target);
+  }
+
+  prevBtn?.addEventListener("click", () => go(-1));
+  nextBtn?.addEventListener("click", () => go(1));
+
+  viewport.addEventListener("scroll", updateNav, { passive: true });
+  const ro = new ResizeObserver(() => updateNav());
+  ro.observe(viewport);
+
+  viewport.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      go(-1);
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      go(1);
+    }
+  });
+
+  getVideos().forEach((v) => {
+    v.addEventListener("loadedmetadata", updateNav, { once: true });
+  });
+  requestAnimationFrame(updateNav);
+}
+
 /* ----- Video lightbox ----- */
 function initVideoLightbox() {
   const triggers = document.querySelectorAll("[data-video-open]");
@@ -718,6 +795,7 @@ async function boot() {
     await loadProjects("#dev-grid-home", 3);
     await loadServices("#services-grid-home", 4);
     await loadTestimonials();
+    initSocialVideosCarousel();
   }
 
   if (path === "nemovitosti.html") {

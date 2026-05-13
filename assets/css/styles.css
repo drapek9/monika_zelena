@@ -1106,6 +1106,79 @@ section[aria-labelledby="ref-heading"] {
   cursor: not-allowed;
 }
 
+/* Sociální sekce — vlevo jako .container, vpravo až k okraji okna; bez viditelného scrollbaru */
+.social-videos-strip {
+  margin-top: 2rem;
+  padding-left: calc(max(0px, (100vw - 1180px) / 2) + clamp(1.25rem, 5vw, 2.5rem));
+  padding-right: 0;
+  box-sizing: border-box;
+}
+
+.social-videos-slider {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.social-videos-slider__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.social-videos-viewport {
+  --social-video-h: clamp(300px, 40vw, 540px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
+  min-width: 0;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  outline: none;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.social-videos-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.social-videos-viewport:focus-visible {
+  box-shadow: 0 0 0 2px var(--c-white), 0 0 0 4px var(--c-accent);
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .social-videos-viewport {
+    scroll-behavior: auto;
+  }
+}
+
+.social-videos-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 0.75rem 1rem;
+  width: max-content;
+  min-height: var(--social-video-h);
+  padding-block: 2px;
+}
+
+.social-videos-row video {
+  height: var(--social-video-h);
+  width: auto;
+  max-width: none;
+  display: block;
+  flex: 0 0 auto;
+  object-fit: contain;
+  object-position: center;
+  background-color: var(--c-warm);
+}
+
 /* Social masonry */
 .social-masonry {
   display: grid;
@@ -1601,6 +1674,9 @@ section[aria-labelledby="ref-heading"] {
   .presentation-layout__row {
     grid-template-columns: 1fr;
   }
+  .social-videos-viewport {
+    --social-video-h: clamp(280px, 48vw, 480px);
+  }
   .footer-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -1657,5 +1733,8 @@ section[aria-labelledby="ref-heading"] {
   }
   .social-masonry {
     grid-auto-rows: 120px;
+  }
+  .social-videos-viewport {
+    --social-video-h: min(52vh, 520px);
   }
 }
