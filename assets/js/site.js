@@ -210,6 +210,30 @@ function formatPropertyPrice(p) {
   return `${num} Kč`;
 }
 
+function renderPropertyCard(p, { sold = false } = {}) {
+  const typeAttr = p.type ? ` data-type="${p.type}"` : "";
+  const soldClass = sold ? " property-card--sold" : "";
+  const badge = sold ? `<span class="sold-badge">Prodáno</span>` : "";
+  const externalUrl = !sold && p.externalUrl ? String(p.externalUrl).trim() : "";
+  const link = externalUrl
+    ? `<a class="property-card__link" href="${externalUrl}" target="_blank" rel="noopener noreferrer" aria-label="Detail nemovitosti: ${p.title}"></a>`
+    : "";
+
+  return `
+      <article class="property-card${soldClass}"${typeAttr}>
+        <div class="property-card__media">
+          ${badge}
+          <img src="${p.image}" alt="" loading="lazy" width="600" height="450" />
+        </div>
+        <div class="property-card__body">
+          <p class="eyebrow">${p.location}</p>
+          <h3>${p.title}</h3>
+          <p class="property-card__price">${formatPropertyPrice(p)}</p>
+        </div>
+        ${link}
+      </article>`;
+}
+
 async function loadPropertiesList(containerSelector, options = {}) {
   const root = document.querySelector(containerSelector);
   if (!root) return [];
@@ -218,27 +242,7 @@ async function loadPropertiesList(containerSelector, options = {}) {
     const list = await res.json();
     const limit = options.limit;
     const items = typeof limit === "number" ? list.slice(0, limit) : list;
-    root.innerHTML = items
-      .map(
-        (p) => `
-      <article class="property-card" data-type="${p.type}">
-        <div class="property-card__media">
-          <img src="${p.image}" alt="" loading="lazy" width="600" height="450" />
-        </div>
-        <div class="property-card__body">
-          <div class="property-card__meta">
-            <span class="property-card__price">${formatPropertyPrice(p)}</span>
-          </div>
-          <p class="property-card__loc">${p.location}</p>
-          <h3 class="mt-sm mb-0" style="font-size:1.05rem">${p.title}</h3>
-        </div>
-        <a class="property-card__link" href="#" aria-label="Nemovitost: ${p.title}"></a>
-      </article>`
-      )
-      .join("");
-    root.querySelectorAll(".property-card__link").forEach((a) => {
-      a.addEventListener("click", (e) => e.preventDefault());
-    });
+    root.innerHTML = items.map((p) => renderPropertyCard(p)).join("");
     return list;
   } catch (e) {
     root.innerHTML = `<p role="alert">Obsah se nepodařilo načíst. Spusťte web přes lokální server.</p>`;
@@ -246,21 +250,44 @@ async function loadPropertiesList(containerSelector, options = {}) {
   }
 }
 
-function initPropertyFilters() {
+function renderPropertyGrid(root, items, { sold = false } = {}) {
+  root.innerHTML = items.map((p) => renderPropertyCard(p, { sold })).join("");
+}
+
+async function initPropertiesPage() {
   const root = document.getElementById("property-grid-page");
   if (!root) return;
 
-  const buttons = document.querySelectorAll("[data-filter]");
+  const buttons = document.querySelectorAll("[data-property-view]");
+  if (!buttons.length) return;
+
+  let properties = [];
+  let sold = [];
+
+  try {
+    const [pRes, sRes] = await Promise.all([
+      fetch("data/properties.json"),
+      fetch("data/sold.json"),
+    ]);
+    properties = await pRes.json();
+    sold = await sRes.json();
+  } catch {
+    root.innerHTML = `<p role="alert">Obsah se nepodařilo načíst. Spusťte web přes lokální server.</p>`;
+    return;
+  }
+
+  const setView = (view) => {
+    const isSold = view === "prodano";
+    renderPropertyGrid(root, isSold ? sold : properties, { sold: isSold });
+    buttons.forEach((b) =>
+      b.classList.toggle("is-active", b.getAttribute("data-property-view") === view)
+    );
+  };
+
+  setView("aktualni");
+
   buttons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const f = btn.getAttribute("data-filter");
-      buttons.forEach((b) => b.classList.toggle("is-active", b === btn));
-      root.querySelectorAll(".property-card").forEach((card) => {
-        const type = card.getAttribute("data-type");
-        const show = f === "all" || type === f;
-        card.style.display = show ? "" : "none";
-      });
-    });
+    btn.addEventListener("click", () => setView(btn.getAttribute("data-property-view")));
   });
 }
 
@@ -271,20 +298,7 @@ async function loadSold(selector) {
   try {
     const res = await fetch("data/sold.json");
     const list = await res.json();
-    root.innerHTML = list
-      .map(
-        (s) => `
-      <article class="sold-card">
-        <img src="${s.image}" alt="" loading="lazy" />
-        <div class="sold-card__overlay">
-          <span class="sold-badge">Prodáno</span>
-          <span class="sold-card__label">${s.location}</span>
-          <h3 class="sold-card__title">${s.title}</h3>
-          <p style="margin:0.35rem 0 0;font-size:0.85rem;color:rgba(255,255,255,.75)">${s.priceLabel}</p>
-        </div>
-      </article>`
-      )
-      .join("");
+    root.innerHTML = list.map((s) => renderPropertyCard(s, { sold: true })).join("");
   } catch {
     root.innerHTML = "";
   }
@@ -680,11 +694,15 @@ function initLeadForm() {
 
   const data = {
     type: "",
-    locality: "",
+    city: "",
+    street: "",
+    ownerRole: "",
     condition: "",
     name: "",
     email: "",
-    phone: ""
+    phone: "",
+    message: "",
+    consent: false
   };
 
   function setStep(i) {
@@ -712,42 +730,331 @@ function initLeadForm() {
   });
 
   document.getElementById("lead-next-1")?.addEventListener("click", () => {
-    const inp = document.getElementById("lead-locality");
-    data.locality = inp?.value.trim() || "";
-    if (data.locality.length < 2) {
-      inp?.focus();
+    const cityInp = document.getElementById("lead-city");
+    const streetInp = document.getElementById("lead-street");
+    data.city = cityInp?.value.trim() || "";
+    data.street = streetInp?.value.trim() || "";
+    if (data.city.length < 2) {
+      cityInp?.focus();
+      return;
+    }
+    if (data.street.length < 2) {
+      streetInp?.focus();
       return;
     }
     setStep(2);
+  });
+
+  document.getElementById("lead-next-owner")?.addEventListener("click", () => {
+    const sel = formRoot.querySelector('input[name="lead-owner-role"]:checked');
+    data.ownerRole = sel?.value || "";
+    if (!data.ownerRole) return;
+    setStep(3);
   });
 
   document.getElementById("lead-next-2")?.addEventListener("click", () => {
     const sel = formRoot.querySelector('input[name="condition"]:checked');
     data.condition = sel?.value || "";
     if (!data.condition) return;
-    setStep(3);
+    setStep(4);
   });
 
-  document.getElementById("lead-back")?.addEventListener("click", () => setStep(step - 1));
-
-  document.getElementById("lead-back-last")?.addEventListener("click", () => setStep(step - 1));
+  formRoot.querySelectorAll(".lead-back").forEach((btn) => {
+    btn.addEventListener("click", () => setStep(step - 1));
+  });
 
   document.getElementById("lead-submit")?.addEventListener("click", (e) => {
     e.preventDefault();
     data.name = document.getElementById("lead-name")?.value.trim() || "";
     data.email = document.getElementById("lead-email")?.value.trim() || "";
     data.phone = document.getElementById("lead-phone")?.value.trim() || "";
+    data.message = document.getElementById("lead-message")?.value.trim() || "";
+    data.consent = document.getElementById("lead-consent")?.checked === true;
+
+    if (data.name.length < 2) {
+      document.getElementById("lead-name")?.focus();
+      return;
+    }
+    if (!data.email.includes("@")) {
+      document.getElementById("lead-email")?.focus();
+      return;
+    }
+    const phoneDigits = data.phone.replace(/\D/g, "");
+    if (phoneDigits.length < 9) {
+      document.getElementById("lead-phone")?.focus();
+      return;
+    }
+    if (!data.consent) {
+      document.getElementById("lead-consent")?.focus();
+      return;
+    }
+
     const summary = document.getElementById("lead-summary");
     if (summary) {
       summary.innerHTML = `
         <p><strong>Typ:</strong> ${data.type}</p>
-        <p><strong>Lokalita:</strong> ${data.locality}</p>
+        <p><strong>Adresa:</strong> ${data.street ? `${data.street}, ` : ""}${data.city}</p>
+        <p><strong>Vlastník:</strong> ${data.ownerRole}</p>
         <p><strong>Stav:</strong> ${data.condition}</p>
         <p><strong>Kontakt:</strong> ${data.name}, ${data.email}, ${data.phone}</p>
+        ${data.message ? `<p><strong>Zpráva:</strong> ${data.message}</p>` : ""}
         <p class="mt-sm" style="opacity:.75">V produkční verzi by data odešla na server / CRM. Nyní jen náhled.</p>`;
     }
     const fd = document.getElementById("lead-feedback");
     if (fd) fd.innerHTML = `<strong>Děkuji.</strong> Ozvu se co nejdříve s návrhem dalšího postupu.`;
+  });
+
+  setStep(0);
+}
+
+/* ----- Odhad zdarma wizard ----- */
+function renderEstimateWizardHtml() {
+  const dispositions = [
+    "1+kk",
+    "1+1",
+    "2+kk",
+    "2+1",
+    "3+kk",
+    "3+1",
+    "4+kk",
+    "4+1",
+    "5+kk",
+    "5+1",
+    "Nevím"
+  ];
+  const dispositionOptions = dispositions
+    .map((d) => `<option value="${d}">${d}</option>`)
+    .join("");
+
+  return `
+    <div style="max-width: 560px">
+      <p class="eyebrow">Odhad zdarma</p>
+      <h1>Odhad ceny nemovitosti</h1>
+      <p class="lead">Pět krátkých kroků – bez zbytečných polí. Ozvu se s nezávazným odhadem a návrhem dalšího postupu.</p>
+    </div>
+    <div class="lead-panel mt-md" id="estimate-wizard">
+      <div class="lead-stepper" role="presentation" aria-hidden="true">
+        <div class="lead-stepper__item" style="flex: 1; height: 4px; background: rgba(255, 255, 255, 0.15); border-radius: 999px; overflow: hidden">
+          <div id="estimate-progress-bar" style="height: 100%; width: 20%; background: var(--c-accent); transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1)"></div>
+        </div>
+      </div>
+      <p class="lead-feedback" id="estimate-feedback">Krok <strong>1</strong> ze 5</p>
+      <div class="lead-steps">
+        <div class="lead-step is-active">
+          <h3>Typ nemovitosti</h3>
+          <div class="choice-grid">
+            <button type="button" class="choice-btn" data-estimate-choice="byt">Byt</button>
+            <button type="button" class="choice-btn" data-estimate-choice="dům">Dům</button>
+            <button type="button" class="choice-btn" data-estimate-choice="pozemek">Pozemek</button>
+            <button type="button" class="choice-btn" data-estimate-choice="komerční prostor">Komerční prostor</button>
+          </div>
+        </div>
+        <div class="lead-step">
+          <h3>Kde se nemovitost nachází?</h3>
+          <label class="visually-hidden" for="estimate-city">Město</label>
+          <input class="lead-input" id="estimate-city" type="text" placeholder="Město" autocomplete="address-level2" />
+          <label class="visually-hidden" for="estimate-street">Ulice</label>
+          <input class="lead-input" id="estimate-street" type="text" placeholder="Ulice" autocomplete="street-address" />
+          <div class="lead-actions">
+            <button type="button" class="btn btn--ghost" id="estimate-next-1">Pokračovat</button>
+            <button type="button" class="btn btn--outline-dark estimate-back" style="border-color: rgba(255,255,255,.35); color: #fff">Zpět</button>
+          </div>
+        </div>
+        <div class="lead-step">
+          <h3>Jste vlastníkem nemovitosti?</h3>
+          <div class="lead-radio-list">
+            <label><input type="radio" name="estimate-owner-role" value="Ano" /> Ano</label>
+            <label><input type="radio" name="estimate-owner-role" value="Ne, zastupuji vlastníka" /> Ne, zastupuji vlastníka</label>
+            <label><input type="radio" name="estimate-owner-role" value="Spoluvlastník" /> Spoluvlastník</label>
+          </div>
+          <div class="lead-actions">
+            <button type="button" class="btn btn--ghost" id="estimate-next-owner">Pokračovat</button>
+            <button type="button" class="btn btn--outline-dark estimate-back" style="border-color: rgba(255,255,255,.35); color: #fff">Zpět</button>
+          </div>
+        </div>
+        <div class="lead-step">
+          <h3>Parametry nemovitosti</h3>
+          <label class="visually-hidden" for="estimate-disposition">Dispozice</label>
+          <select class="lead-select" id="estimate-disposition" required>
+            <option value="" disabled selected>Dispozice</option>
+            ${dispositionOptions}
+          </select>
+          <label class="visually-hidden" for="estimate-area">Plocha v m²</label>
+          <input class="lead-input" id="estimate-area" type="number" min="1" step="1" placeholder="Plocha (m²)" inputmode="numeric" />
+          <p style="margin: 0 0 0.75rem; font-size: 0.88rem; color: rgba(255,255,255,.65)">Druh vlastnictví</p>
+          <div class="lead-radio-list">
+            <label><input type="radio" name="estimate-ownership" value="Osobní vlastnictví" /> Osobní vlastnictví</label>
+            <label><input type="radio" name="estimate-ownership" value="Družstevní vlastnictví" /> Družstevní vlastnictví</label>
+            <label><input type="radio" name="estimate-ownership" value="Jiné" /> Jiné</label>
+            <label><input type="radio" name="estimate-ownership" value="Nevím" /> Nevím</label>
+          </div>
+          <div class="lead-actions">
+            <button type="button" class="btn btn--ghost" id="estimate-next-2">Pokračovat</button>
+            <button type="button" class="btn btn--outline-dark estimate-back" style="border-color: rgba(255,255,255,.35); color: #fff">Zpět</button>
+          </div>
+        </div>
+        <div class="lead-step">
+          <h3>Kontakt a zpráva</h3>
+          <label class="visually-hidden" for="estimate-name">Jméno a příjmení</label>
+          <input class="lead-input" id="estimate-name" type="text" placeholder="Jméno a příjmení" autocomplete="name" />
+          <label class="visually-hidden" for="estimate-email">E-mail</label>
+          <input class="lead-input" id="estimate-email" type="email" placeholder="E-mail" autocomplete="email" />
+          <label class="visually-hidden" for="estimate-phone">Telefon</label>
+          <input class="lead-input" id="estimate-phone" type="tel" placeholder="Telefon" autocomplete="tel" />
+          <label class="visually-hidden" for="estimate-message">Zpráva</label>
+          <textarea class="lead-input" id="estimate-message" rows="4" placeholder="Zpráva (volitelné)" style="resize: vertical; min-height: 110px"></textarea>
+          <label class="lead-consent">
+            <input type="checkbox" id="estimate-consent" />
+            <span>Souhlasím se zpracováním osobních údajů za účelem nezávazného odhadu nemovitosti.</span>
+          </label>
+          <div class="lead-actions">
+            <button type="button" class="btn btn--primary" id="estimate-submit">Odeslat nezávazně</button>
+            <button type="button" class="btn btn--ghost estimate-back">Zpět</button>
+          </div>
+          <div id="estimate-summary" class="lead-feedback" style="margin-top: 1.25rem"></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function initEstimateForm() {
+  const formRoot = document.getElementById("estimate-wizard");
+  if (!formRoot) return;
+
+  const steps = [...formRoot.querySelectorAll(".lead-step")];
+  const progressBar = document.getElementById("estimate-progress-bar");
+  let step = 0;
+
+  const data = {
+    type: "",
+    city: "",
+    street: "",
+    ownerRole: "",
+    disposition: "",
+    area: "",
+    ownership: "",
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+    consent: false
+  };
+
+  function setStep(i) {
+    step = Math.max(0, Math.min(i, steps.length - 1));
+    steps.forEach((s, idx) => s.classList.toggle("is-active", idx === step));
+    if (progressBar) {
+      progressBar.style.width = `${((step + 1) / steps.length) * 100}%`;
+    }
+    const feedback = document.getElementById("estimate-feedback");
+    if (feedback) {
+      feedback.innerHTML =
+        step === steps.length - 1
+          ? `<strong>Téměř hotovo.</strong> Zkontrolujte údaje a odešlete žádost o odhad.`
+          : `Krok <strong>${step + 1}</strong> ze ${steps.length}`;
+    }
+  }
+
+  formRoot.querySelectorAll("[data-estimate-choice]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      formRoot.querySelectorAll("[data-estimate-choice]").forEach((b) => b.classList.remove("is-selected"));
+      btn.classList.add("is-selected");
+      data.type = btn.getAttribute("data-estimate-choice") || "";
+      setTimeout(() => setStep(1), 280);
+    });
+  });
+
+  document.getElementById("estimate-next-1")?.addEventListener("click", () => {
+    const cityInp = document.getElementById("estimate-city");
+    const streetInp = document.getElementById("estimate-street");
+    data.city = cityInp?.value.trim() || "";
+    data.street = streetInp?.value.trim() || "";
+    if (data.city.length < 2) {
+      cityInp?.focus();
+      return;
+    }
+    if (data.street.length < 2) {
+      streetInp?.focus();
+      return;
+    }
+    setStep(2);
+  });
+
+  document.getElementById("estimate-next-owner")?.addEventListener("click", () => {
+    const sel = formRoot.querySelector('input[name="estimate-owner-role"]:checked');
+    data.ownerRole = sel?.value || "";
+    if (!data.ownerRole) return;
+    setStep(3);
+  });
+
+  document.getElementById("estimate-next-2")?.addEventListener("click", () => {
+    const dispositionEl = document.getElementById("estimate-disposition");
+    const areaEl = document.getElementById("estimate-area");
+    const ownershipSel = formRoot.querySelector('input[name="estimate-ownership"]:checked');
+
+    data.disposition = dispositionEl?.value || "";
+    data.area = areaEl?.value.trim() || "";
+    data.ownership = ownershipSel?.value || "";
+
+    if (!data.disposition) {
+      dispositionEl?.focus();
+      return;
+    }
+    const areaNum = Number(data.area);
+    if (!data.area || Number.isNaN(areaNum) || areaNum < 1) {
+      areaEl?.focus();
+      return;
+    }
+    if (!data.ownership) return;
+    setStep(4);
+  });
+
+  formRoot.querySelectorAll(".estimate-back").forEach((btn) => {
+    btn.addEventListener("click", () => setStep(step - 1));
+  });
+
+  document.getElementById("estimate-submit")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    data.name = document.getElementById("estimate-name")?.value.trim() || "";
+    data.email = document.getElementById("estimate-email")?.value.trim() || "";
+    data.phone = document.getElementById("estimate-phone")?.value.trim() || "";
+    data.message = document.getElementById("estimate-message")?.value.trim() || "";
+    data.consent = document.getElementById("estimate-consent")?.checked === true;
+
+    if (data.name.length < 2) {
+      document.getElementById("estimate-name")?.focus();
+      return;
+    }
+    if (!data.email.includes("@")) {
+      document.getElementById("estimate-email")?.focus();
+      return;
+    }
+    const phoneDigits = data.phone.replace(/\D/g, "");
+    if (phoneDigits.length < 9) {
+      document.getElementById("estimate-phone")?.focus();
+      return;
+    }
+    if (!data.consent) {
+      document.getElementById("estimate-consent")?.focus();
+      return;
+    }
+
+    const summary = document.getElementById("estimate-summary");
+    if (summary) {
+      summary.innerHTML = `
+        <p><strong>Typ:</strong> ${data.type}</p>
+        <p><strong>Adresa:</strong> ${data.street ? `${data.street}, ` : ""}${data.city}</p>
+        <p><strong>Vlastník:</strong> ${data.ownerRole}</p>
+        <p><strong>Dispozice:</strong> ${data.disposition} · <strong>Plocha:</strong> ${data.area} m²</p>
+        <p><strong>Druh vlastnictví:</strong> ${data.ownership}</p>
+        <p><strong>Kontakt:</strong> ${data.name}, ${data.email}, ${data.phone}</p>
+        ${data.message ? `<p><strong>Zpráva:</strong> ${data.message}</p>` : ""}
+        <p class="mt-sm" style="opacity:.75">V produkční verzi by data odešla na server / CRM. Nyní jen náhled.</p>`;
+    }
+    const feedback = document.getElementById("estimate-feedback");
+    if (feedback) {
+      feedback.innerHTML = `<strong>Děkuji.</strong> Ozvu se co nejdříve s nezávazným odhadem.`;
+    }
   });
 
   setStep(0);
@@ -771,9 +1078,55 @@ function initParallax() {
   );
 }
 
+/* Kotva na úvodní stránce (např. index.html#lead z Reference) */
+function initIndexHashScrollPrep() {
+  const path = (window.location.pathname.split("/").pop() || "index.html").split("?")[0];
+  if (path !== "index.html" && path !== "") return;
+  if (!window.location.hash) return;
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+  window.scrollTo(0, 0);
+}
+
+function scrollToHashTarget() {
+  const hash = window.location.hash;
+  if (!hash) return;
+  const el = document.getElementById(hash.slice(1));
+  if (!el) return;
+
+  el.querySelectorAll("[data-reveal]").forEach((node) => node.classList.add("is-visible"));
+
+  const header = document.getElementById("site-header");
+  const offset = (header?.offsetHeight ?? 76) + 20;
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const top = el.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({
+        top: Math.max(0, top),
+        behavior: prefersReducedMotion ? "auto" : "smooth"
+      });
+    });
+  });
+}
+
+/* Stránka Odhad zdarma – světlá hlavička jako Domů, bez skoku na hash */
+function initEstimatePageShell() {
+  const path = (window.location.pathname.split("/").pop() || "index.html").split("?")[0];
+  const params = new URLSearchParams(window.location.search);
+  if (path !== "sluzba-detail.html" || params.get("slug") !== "odhad") return;
+
+  document.body.classList.add("has-light-hero");
+  if (window.location.hash) {
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  }
+  window.scrollTo(0, 0);
+}
+
 /* ----- Boot ----- */
 async function boot() {
   initLoader();
+  initIndexHashScrollPrep();
+  initEstimatePageShell();
   await loadPartial("header-mount", "partials/header.html");
   await loadPartial("footer-mount", "partials/footer.html");
   await initFooterSocialLinks();
@@ -796,11 +1149,11 @@ async function boot() {
     await loadServices("#services-grid-home", 4);
     await loadTestimonials();
     initSocialVideosCarousel();
+    if (window.location.hash) scrollToHashTarget();
   }
 
   if (path === "nemovitosti.html") {
-    await loadPropertiesList("#property-grid-page");
-    initPropertyFilters();
+    await initPropertiesPage();
   }
 
   if (path === "nemovitost-detail.html") {
@@ -927,6 +1280,17 @@ async function initServiceDetail() {
     const s = list.find((x) => x.slug === slug) || list[0];
     if (!root || !s) return;
     document.title = `${s.title} | Monika Zelená`;
+
+    if (s.slug === "odhad") {
+      document.body.classList.add("has-light-hero");
+      root.classList.add("is-wide");
+      root.innerHTML = renderEstimateWizardHtml();
+      initEstimateForm();
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    root.classList.remove("is-wide");
     root.innerHTML = `
       <p class="eyebrow">Služba</p>
       <h1>${s.title}</h1>
@@ -940,7 +1304,7 @@ async function initServiceDetail() {
       </ul>
       <p class="mt-md"><a class="btn btn--outline-dark" href="kontakt.html">Domluvit konzultaci</a></p>`;
   } catch {
-    root.innerHTML = "";
+    if (root) root.innerHTML = "";
   }
 }
 

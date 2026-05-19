@@ -30,7 +30,7 @@
         <div class="container hero__inner">
           <div class="hero__grid hero__grid--personal">
             <div class="hero__copy" data-reveal>
-              <h1 data-parallax style="will-change: transform">Realitní makléřka - Jihlava a Vysočina</h1>
+              <h1>Realitní makléřka - Jihlava a Vysočina</h1>
               <p class="lead hero__lead">
                 Jsem tu jako váš partner v transakci: férově vysvětlím čísla, nastavím marketing a držím proces pohromadě, abyste se v každém kroku cítili jistě.
               </p>
@@ -136,54 +136,44 @@
             <h2 id="pres-heading">Profesionální prezentace, která prodává</h2>
             <p class="lead">Neprodávám jen prostor. Prodávám pocit domova.</p>
           </div>
-          <div class="presentation-layout__row">
-            <div data-reveal>
-              <div
-                class="presentation-video"
-                id="presentation-trigger"
-                role="button"
-                tabindex="0"
-                data-video-open
-                data-video-src="https://videos.pexels.com/video-files/7578541/7578541-uhd_2560_1440_25fps.mp4"
-                aria-label="Přehrát ukázku prezentace nemovitosti"
-              >
-                <img
-                  src="https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1400&q=80"
-                  alt=""
-                  loading="lazy"
-                />
-                <div class="presentation-video__play">
-                  <span class="play-btn" aria-hidden="true">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
-                  </span>
-                </div>
-              </div>
+          <div class="presentation-videos" data-reveal aria-label="Místo pro ukázková videa">
+            <div
+              class="presentation-video presentation-video--placeholder"
+              role="img"
+              aria-label="Místo pro ukázkové video (formát jako YouTube)"
+            >
+              <span class="presentation-video__ph-visual" aria-hidden="true"></span>
             </div>
-            <div data-reveal>
-              <div class="feature-mini-grid">
-              <div class="feature-mini">
-                <h4>Profesionální fotografie</h4>
-                <p>Zajistím atraktivní snímky, které zvýrazní přednosti nemovitosti a zaujmou na první pohled.</p>
-              </div>
-              <div class="feature-mini">
-                <h4>Videoprohlídky</h4>
-                <p>Video dokáže zachytit atmosféru prostoru a osloví i zájemce, kteří nemohou dorazit osobně.</p>
-              </div>
-              <div class="feature-mini">
-                <h4>Letecké záběry dronem</h4>
-                <p>Ideální pro rodinné domy, pozemky a lokality – kupující získají okamžitý přehled o okolí.</p>
-              </div>
-              <div class="feature-mini">
-                <h4>Vizualizace &amp; virtuální homestaging</h4>
-                <p>Pomohu ukázat potenciál prostoru – i u prázdných či starších interiérů, které si zájemce sám často nedokáže představit.</p>
-              </div>
-              <div class="feature-mini">
-                <h4>Moderní marketing a propagace</h4>
-                <p>Cílená komunikace na sociálních sítích a efektivní propagace tam, kde jsou skuteční kupující.</p>
-              </div>
+            <div
+              class="presentation-video presentation-video--placeholder"
+              role="img"
+              aria-label="Místo pro druhé ukázkové video (formát jako YouTube)"
+            >
+              <span class="presentation-video__ph-visual" aria-hidden="true"></span>
             </div>
           </div>
-        </div>
+          <div class="presentation-services" data-reveal>
+            <div class="feature-mini">
+              <h4>Profesionální fotografie</h4>
+              <p>Zajistím atraktivní snímky, které zvýrazní přednosti nemovitosti a zaujmou na první pohled.</p>
+            </div>
+            <div class="feature-mini">
+              <h4>Videoprohlídky</h4>
+              <p>Video dokáže zachytit atmosféru prostoru a osloví i zájemce, kteří nemohou dorazit osobně.</p>
+            </div>
+            <div class="feature-mini">
+              <h4>Letecké záběry dronem</h4>
+              <p>Ideální pro rodinné domy, pozemky a lokality – kupující získají okamžitý přehled o okolí.</p>
+            </div>
+            <div class="feature-mini">
+              <h4>Vizualizace &amp; virtuální homestaging</h4>
+              <p>Pomohu ukázat potenciál prostoru – i u prázdných či starších interiérů, které si zájemce sám často nedokáže představit.</p>
+            </div>
+            <div class="feature-mini">
+              <h4>Moderní marketing a propagace</h4>
+              <p>Cílená komunikace na sociálních sítích a efektivní propagace tam, kde jsou skuteční kupující.</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -288,15 +278,15 @@
           <div data-reveal style="max-width: 560px">
             <p class="eyebrow">Začněme</p>
             <h2 id="lead-heading">Chci prodat nemovitost</h2>
-            <p class="lead">Čtyři krátké kroky - bez zbytečných polí. Ozvu se s návrhem dalšího postupu.</p>
+            <p class="lead">Pět krátkých kroků – bez zbytečných polí. Ozvu se s návrhem dalšího postupu.</p>
           </div>
           <div class="lead-panel mt-md" id="lead-wizard" data-reveal>
             <div class="lead-stepper" role="presentation" aria-hidden="true">
               <div class="lead-stepper__item" style="flex: 1; height: 4px; background: rgba(255, 255, 255, 0.15); border-radius: 999px; overflow: hidden">
-                <div id="lead-progress-bar" style="height: 100%; width: 25%; background: var(--c-accent); transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1)"></div>
+                <div id="lead-progress-bar" style="height: 100%; width: 20%; background: var(--c-accent); transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1)"></div>
               </div>
             </div>
-            <p class="lead-feedback" id="lead-feedback">Krok <strong>1</strong> ze 4</p>
+            <p class="lead-feedback" id="lead-feedback">Krok <strong>1</strong> ze 5</p>
 
             <div class="lead-steps">
               <div class="lead-step is-active">
@@ -310,10 +300,25 @@
               </div>
               <div class="lead-step">
                 <h3>Kde se nemovitost nachází?</h3>
-                <label class="visually-hidden" for="lead-locality">Obec nebo část města</label>
-                <input class="lead-input" id="lead-locality" type="text" placeholder="např. Jihlava - centrum" autocomplete="address-level2" />
+                <label class="visually-hidden" for="lead-city">Město</label>
+                <input class="lead-input" id="lead-city" type="text" placeholder="Město" autocomplete="address-level2" />
+                <label class="visually-hidden" for="lead-street">Ulice</label>
+                <input class="lead-input" id="lead-street" type="text" placeholder="Ulice" autocomplete="street-address" />
                 <div class="lead-actions">
                   <button type="button" class="btn btn--ghost" id="lead-next-1">Pokračovat</button>
+                  <button type="button" class="btn btn--outline-dark lead-back" style="border-color: rgba(255,255,255,.35); color: #fff">Zpět</button>
+                </div>
+              </div>
+              <div class="lead-step">
+                <h3>Jste vlastníkem nemovitosti?</h3>
+                <div class="lead-radio-list">
+                  <label><input type="radio" name="lead-owner-role" value="Ano" /> Ano</label>
+                  <label><input type="radio" name="lead-owner-role" value="Ne, zastupuji vlastníka" /> Ne, zastupuji vlastníka</label>
+                  <label><input type="radio" name="lead-owner-role" value="Spoluvlastník" /> Spoluvlastník</label>
+                </div>
+                <div class="lead-actions">
+                  <button type="button" class="btn btn--ghost" id="lead-next-owner">Pokračovat</button>
+                  <button type="button" class="btn btn--outline-dark lead-back" style="border-color: rgba(255,255,255,.35); color: #fff">Zpět</button>
                 </div>
               </div>
               <div class="lead-step">
@@ -331,7 +336,7 @@
                 </div>
                 <div class="lead-actions">
                   <button type="button" class="btn btn--ghost" id="lead-next-2">Pokračovat</button>
-                  <button type="button" class="btn btn--outline-dark" id="lead-back" style="border-color: rgba(255,255,255,.35); color: #fff">Zpět</button>
+                  <button type="button" class="btn btn--outline-dark lead-back" style="border-color: rgba(255,255,255,.35); color: #fff">Zpět</button>
                 </div>
               </div>
               <div class="lead-step">
@@ -342,9 +347,15 @@
                 <input class="lead-input" id="lead-email" type="email" placeholder="E-mail" autocomplete="email" />
                 <label class="visually-hidden" for="lead-phone">Telefon</label>
                 <input class="lead-input" id="lead-phone" type="tel" placeholder="Telefon" autocomplete="tel" />
+                <label class="visually-hidden" for="lead-message">Zpráva</label>
+                <textarea class="lead-input" id="lead-message" rows="4" placeholder="Zpráva (volitelné)" style="resize: vertical; min-height: 110px"></textarea>
+                <label class="lead-consent">
+                  <input type="checkbox" id="lead-consent" />
+                  <span>Souhlasím se zpracováním osobních údajů za účelem zpracování poptávky na prodej nemovitosti.</span>
+                </label>
                 <div class="lead-actions">
                   <button type="button" class="btn btn--primary" id="lead-submit">Odeslat nezávazně</button>
-                  <button type="button" class="btn btn--ghost" id="lead-back-last">Zpět</button>
+                  <button type="button" class="btn btn--ghost lead-back">Zpět</button>
                 </div>
                 <div id="lead-summary" class="lead-feedback" style="margin-top: 1.25rem"></div>
               </div>

@@ -45,7 +45,22 @@
                 <img src="assets/icons/tiktok.svg" alt="" width="22" height="22" class="social-icon__svg social-icon__tiktok-img" loading="lazy" decoding="async" />
               </a>
             </div>
-            <p style="margin-top: 2rem; font-size: 0.9rem; color: var(--c-muted)">
+            <a
+              href="https://hvreality.cz/"
+              class="hv-logo-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img
+                src="images/logo_kancelar.png"
+                alt="HV Reality - Horák &amp; Vetchý"
+                width="240"
+                height="72"
+                loading="lazy"
+                decoding="async"
+              />
+            </a>
+            <p style="margin-top: 1.25rem; font-size: 0.9rem; color: var(--c-muted)">
               Spolupráce v exkluzivním zastoupení <a href="https://hvreality.cz/" target="_blank" rel="noopener noreferrer">HV Reality</a>.
             </p>
           </div>
@@ -56,6 +71,8 @@
               <input class="lead-input" id="cf-name" name="name" type="text" required placeholder="Jméno" autocomplete="name" />
               <label class="visually-hidden" for="cf-email">E-mail</label>
               <input class="lead-input" id="cf-email" name="email" type="email" required placeholder="E-mail" autocomplete="email" />
+              <label class="visually-hidden" for="cf-phone">Telefon</label>
+              <input class="lead-input" id="cf-phone" name="phone" type="tel" required placeholder="Telefon" autocomplete="tel" />
               <label class="visually-hidden" for="cf-msg">Zpráva</label>
               <textarea class="lead-input" id="cf-msg" name="message" rows="4" required placeholder="Jak vám mohu pomoci?" style="resize: vertical; min-height: 120px"></textarea>
               <button type="submit" class="btn btn--primary" style="width: 100%">Odeslat</button>
@@ -95,6 +112,11 @@
     <script>
       document.getElementById("contact-form")?.addEventListener("submit", function (e) {
         e.preventDefault();
+        var phone = (document.getElementById("cf-phone")?.value || "").replace(/\D/g, "");
+        if (phone.length < 9) {
+          document.getElementById("cf-phone")?.focus();
+          return;
+        }
         var fb = document.getElementById("contact-feedback");
         if (fb) {
           fb.style.display = "block";
