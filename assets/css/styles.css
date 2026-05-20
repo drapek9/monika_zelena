@@ -170,6 +170,21 @@ p.lead {
   color: rgba(255, 255, 255, 0.72);
 }
 
+.about-pullquote {
+  margin: 1.75rem 0 0;
+  padding: 0 0 0 1.15rem;
+  border-left: 3px solid var(--c-accent);
+}
+
+.about-pullquote p {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  line-height: 1.55;
+  font-style: italic;
+  color: var(--c-ink);
+}
+
 /* Header */
 .site-header {
   position: fixed;
@@ -828,6 +843,12 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   margin-bottom: 0;
 }
 
+#prezentace .presentation-layout__intro .lead {
+  font-size: 1.08rem;
+  line-height: 1.68;
+  max-width: 48ch;
+}
+
 .presentation-videos {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -884,7 +905,7 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 .presentation-services {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 0.9rem;
+  gap: 1.25rem;
 }
 
 .presentation-services .feature-mini:nth-child(1),
@@ -905,6 +926,11 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
+}
+
+.section--warm .feature-mini-grid .feature-mini {
+  background: var(--c-white);
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 .feature-mini {
@@ -932,30 +958,54 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   color: var(--c-muted);
 }
 
-/* Kompaktnější karty pod ukázkovými videi v prezentační sekci */
+/* Prezentace – karty ve stylu zbytku webu (service-card) */
 .presentation-services .feature-mini {
-  padding: 0.85rem 0.9rem;
-  border-radius: var(--radius-sm);
+  position: relative;
+  padding: 1.55rem 1.45rem;
+  border-radius: var(--radius-md);
+  background: var(--c-white);
+  border: 1px solid rgba(244, 193, 5, 0.32);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition: transform 0.35s var(--ease-out), box-shadow 0.35s var(--ease-out), border-color 0.35s var(--ease-out);
+}
+
+.presentation-services .feature-mini::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(244, 193, 5, 0.09), transparent 55%);
+  opacity: 1;
+  pointer-events: none;
 }
 
 .presentation-services .feature-mini:hover {
-  transform: translateY(-2px);
+  transform: translateY(-6px);
+  border-color: rgba(244, 193, 5, 0.5);
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.1);
 }
 
 .presentation-services .feature-mini h4 {
-  font-size: 0.88rem;
-  margin: 0 0 0.35rem;
-  line-height: 1.25;
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-display);
+  font-size: clamp(1rem, 1.35vw, 1.12rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.22;
+  margin: 0 0 0.7rem;
+  color: var(--c-ink);
 }
 
 .presentation-services .feature-mini p {
-  font-size: 0.8rem;
-  line-height: 1.45;
-}
-
-#prezentace.section--warm .presentation-services .feature-mini {
-  background: var(--c-white);
-  border-color: rgba(0, 0, 0, 0.08);
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.62;
+  color: var(--c-muted);
 }
 
 /* Services grid */

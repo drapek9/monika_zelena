@@ -376,9 +376,14 @@ async function loadServices(selector, limit) {
 
 /* ----- Testimonials -----
    Nekonečný posuv ve stejném směru: duplicitní řada v DOM, po scrollIndex === N stejný výřez jako na 0 → okamžitý přeskok bez „zpětné“ animace. */
-async function loadTestimonials() {
-  const viewport = document.getElementById("testimonial-viewport");
-  const track = document.getElementById("testimonial-track");
+async function loadTestimonials(options = {}) {
+  const viewportId = options.viewportId || "testimonial-viewport";
+  const trackId = options.trackId || "testimonial-track";
+  const prevId = options.prevId || "t-prev";
+  const nextId = options.nextId || "t-next";
+
+  const viewport = document.getElementById(viewportId);
+  const track = document.getElementById(trackId);
   if (!track || !viewport) return;
 
   let scrollIndex = 0;
@@ -400,8 +405,8 @@ async function loadTestimonials() {
       .join("");
     track.innerHTML = N >= 2 ? cardHtml + cardHtml : cardHtml;
 
-    const prev = document.getElementById("t-prev");
-    const next = document.getElementById("t-next");
+    const prev = document.getElementById(prevId);
+    const next = document.getElementById(nextId);
 
     function visibleCount() {
       const w = window.innerWidth;
@@ -1170,6 +1175,15 @@ async function boot() {
 
   if (path === "reference.html") {
     await loadReferencePage();
+  }
+
+  if (path === "o-mne.html") {
+    await loadTestimonials({
+      viewportId: "about-testimonial-viewport",
+      trackId: "about-testimonial-track",
+      prevId: "about-t-prev",
+      nextId: "about-t-next"
+    });
   }
 
   if (path === "sluzba-detail.html") {
