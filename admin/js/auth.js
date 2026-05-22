@@ -59,7 +59,7 @@ export async function requireAuth() {
   logSession("requireAuth", session);
 
   if (!session?.user) {
-    console.log("[auth] no session — redirect to login");
+    console.log("[auth] no session - redirect to login");
     window.location.replace(LOGIN_PATH);
     return null;
   }
@@ -70,7 +70,7 @@ export async function requireAuth() {
 export async function redirectIfLoggedIn() {
   const { session } = await waitForAuthReady();
   if (session?.user) {
-    console.log("[auth] already logged in — redirect to dashboard");
+    console.log("[auth] already logged in - redirect to dashboard");
     window.location.replace(DASHBOARD_PATH);
   }
 }
@@ -82,7 +82,7 @@ export async function redirectIfLoggedIn() {
 export async function ensureAuthenticated() {
   const session = await getSession();
   if (!session?.user) {
-    console.log("[auth] ensureAuthenticated failed — redirect to login");
+    console.log("[auth] ensureAuthenticated failed - redirect to login");
     window.location.replace(LOGIN_PATH);
     return null;
   }

@@ -42,6 +42,14 @@ const imageUrlInput = document.getElementById("image-url");
 const imageFileInput = document.getElementById("image-file");
 const imagePreview = document.getElementById("image-preview");
 
+const PROPERTY_STATUSES = ["active", "reserved", "sold"];
+
+const STATUS_LABELS = {
+  active: "Aktivní",
+  reserved: "Rezervovaná",
+  sold: "Prodáno",
+};
+
 let allProperties = [];
 let currentFilter = "all";
 let imageMode = "url";
@@ -152,13 +160,13 @@ function setEditMode(prop) {
   formCancelBtn.hidden = false;
   propertyFormSection.classList.add("is-editing");
   imageHint.textContent =
-    "Ponechte URL beze změny, nebo nahrajte nový soubor — jinak zůstane stávající obrázek.";
+    "Ponechte URL beze změny, nebo nahrajte nový soubor - jinak zůstane stávající obrázek.";
 
   propertyForm.name.value = prop.name ?? "";
   propertyForm.price.value = prop.price ?? "";
   propertyForm.location.value = prop.location ?? "";
   propertyForm.type.value = prop.type ?? "sale";
-  propertyForm.sold.value = prop.sold ? "true" : "false";
+  propertyForm.status.value = normalizePropertyStatus(prop);
   propertyForm.link.value = prop.link ?? "";
 
   setImageMode("url");
@@ -181,7 +189,7 @@ function cancelEdit() {
   formCancelBtn.hidden = true;
   propertyFormSection.classList.remove("is-editing");
   imageHint.textContent =
-    "Vložte URL, nebo nahrajte soubor do úložiště Supabase (property_images).";
+    "Vložte URL, nebo nahrajte soubor do úložiště.";
   propertyForm.reset();
   setImageMode("url");
   clearImagePreview();
@@ -192,7 +200,16 @@ function cancelEdit() {
 
 formCancelBtn.addEventListener("click", cancelEdit);
 
+function parsePriceInput(value) {
+  const trimmed = String(value ?? "").trim();
+  if (trimmed === "") return null;
+  const n = Number(trimmed);
+  if (Number.isNaN(n) || n < 0) return null;
+  return n;
+}
+
 function formatPrice(price) {
+  if (price == null || price === "") return "—";
   return new Intl.NumberFormat("cs-CZ", {
     style: "currency",
     currency: "CZK",
@@ -202,6 +219,21 @@ function formatPrice(price) {
 
 function typeLabel(type) {
   return type === "rent" ? "Pronájem" : "Prodej";
+}
+
+function normalizePropertyStatus(prop) {
+  if (prop.status && PROPERTY_STATUSES.includes(prop.status)) {
+    return prop.status;
+  }
+  if (prop.sold === true) return "sold";
+  return "active";
+}
+
+function statusSelectOptions(selected) {
+  return PROPERTY_STATUSES.map(
+    (value) =>
+      `<option value="${value}"${value === selected ? " selected" : ""}>${STATUS_LABELS[value]}</option>`
+  ).join("");
 }
 
 function showFormMessage(el, message) {
@@ -226,10 +258,13 @@ function showListError(message) {
 
 function getFilteredProperties() {
   if (currentFilter === "active") {
-    return allProperties.filter((p) => !p.sold);
+    return allProperties.filter((p) => normalizePropertyStatus(p) === "active");
+  }
+  if (currentFilter === "reserved") {
+    return allProperties.filter((p) => normalizePropertyStatus(p) === "reserved");
   }
   if (currentFilter === "sold") {
-    return allProperties.filter((p) => p.sold);
+    return allProperties.filter((p) => normalizePropertyStatus(p) === "sold");
   }
   return allProperties;
 }
@@ -255,22 +290,21 @@ function renderTable() {
     }
 
     const typeClass = prop.type === "rent" ? "admin-badge--rent" : "admin-badge--sale";
-    const statusClass = prop.sold ? "admin-badge--sold" : "admin-badge--active";
-    const statusText = prop.sold ? "Prodáno" : "Aktivní";
+    const status = normalizePropertyStatus(prop);
 
     tr.innerHTML = `
       <td data-label="Název">${escapeHtml(prop.name)}</td>
       <td data-label="Cena">${formatPrice(prop.price)}</td>
       <td data-label="Lokalita">${escapeHtml(prop.location)}</td>
       <td data-label="Typ"><span class="admin-badge ${typeClass}">${typeLabel(prop.type)}</span></td>
-      <td data-label="Stav"><span class="admin-badge ${statusClass}">${statusText}</span></td>
+      <td data-label="Stav">
+        <select class="admin-status-select status-select" aria-label="Stav nemovitosti">
+          ${statusSelectOptions(status)}
+        </select>
+      </td>
       <td class="admin-actions-cell" data-label="">
         <div class="admin-actions">
           <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm edit-btn">Upravit</button>
-          <label class="admin-toggle">
-            <input type="checkbox" class="sold-toggle" ${prop.sold ? "checked" : ""} aria-label="Označit jako prodané" />
-            Prodáno
-          </label>
           <button type="button" class="admin-btn admin-btn--danger admin-btn--sm delete-btn">Smazat</button>
         </div>
       </td>
@@ -278,9 +312,9 @@ function renderTable() {
 
     tr.querySelector(".edit-btn").addEventListener("click", () => setEditMode(prop));
 
-    const soldToggle = tr.querySelector(".sold-toggle");
-    soldToggle.addEventListener("change", () =>
-      toggleSold(prop.id, soldToggle.checked, soldToggle)
+    const statusSelect = tr.querySelector(".status-select");
+    statusSelect.addEventListener("change", () =>
+      updatePropertyStatus(prop.id, statusSelect.value, statusSelect)
     );
 
     const deleteBtn = tr.querySelector(".delete-btn");
@@ -326,26 +360,29 @@ async function loadProperties() {
   renderTable();
 }
 
-async function toggleSold(id, sold, checkboxEl) {
+async function updatePropertyStatus(id, status, selectEl) {
   const authSession = await ensureAuthenticated();
   if (!authSession) return;
 
-  checkboxEl.disabled = true;
+  if (!PROPERTY_STATUSES.includes(status)) return;
 
-  const { error } = await supabase.from("properties").update({ sold }).eq("id", id);
+  const previous = normalizePropertyStatus(allProperties.find((p) => p.id === id) || {});
+  selectEl.disabled = true;
 
-  checkboxEl.disabled = false;
+  const { error } = await supabase.from("properties").update({ status }).eq("id", id);
+
+  selectEl.disabled = false;
 
   if (error) {
-    checkboxEl.checked = !sold;
+    selectEl.value = previous;
     alert("Chyba při změně stavu: " + error.message);
     return;
   }
 
   const item = allProperties.find((p) => p.id === id);
-  if (item) item.sold = sold;
+  if (item) item.status = status;
   if (editingId === id) {
-    propertyForm.sold.value = sold ? "true" : "false";
+    propertyForm.status.value = status;
   }
   renderTable();
 }
@@ -419,12 +456,12 @@ propertyForm.addEventListener("submit", async (e) => {
 
   const payload = {
     name: propertyForm.name.value.trim(),
-    price: Number(propertyForm.price.value),
+    price: parsePriceInput(propertyForm.price.value),
     location: propertyForm.location.value.trim(),
     type: propertyForm.type.value,
     link: propertyForm.link.value.trim(),
     image: imageValue,
-    sold: propertyForm.sold.value === "true",
+    status: propertyForm.status.value,
   };
 
   formSubmitBtn.textContent = isEdit ? "Ukládám změny…" : "Ukládám…";

@@ -9,6 +9,10 @@
   --c-soft: #868686;
   --c-white: #ffffff;
   --c-warm: #f8f8f8;
+  --c-surface-light: #ffffff;
+  --c-surface-mid: #f8f8f8;
+  --c-surface-deep: #dedede;
+  --c-section-line: rgba(72, 72, 72, 0.14);
   --c-accent: #f4c105;
   --font-display: "Libre Bodoni", "Bodoni MT", "Didot", Georgia, serif;
   --font-body: "Montserrat", system-ui, sans-serif;
@@ -20,6 +24,12 @@
   --shadow-soft: 0 24px 80px rgba(0, 0, 0, 0.12);
   --shadow-card: 0 16px 48px rgba(0, 0, 0, 0.08);
   --header-h: 76px;
+}
+
+@supports (background: color-mix(in srgb, #f8f8f8, #868686)) {
+  :root {
+    --c-surface-deep: color-mix(in srgb, #868686 28%, #f8f8f8 72%);
+  }
 }
 
 *,
@@ -111,8 +121,26 @@ button {
   color: var(--c-white);
 }
 
-.section--warm {
-  background: var(--c-warm);
+.section--warm,
+.section--tone-light {
+  background: var(--c-surface-light);
+}
+
+.section--tone-mid {
+  background: var(--c-surface-mid);
+}
+
+.section--tone-deep {
+  background: var(--c-surface-deep);
+}
+
+/* Domů: oddělené pásy – sekce nesplývají s pozadím ani mezi sebou */
+.page-home #main > .section[class*="section--tone"] {
+  border-top: 1px solid var(--c-section-line);
+}
+
+.page-home #main > .section[class*="section--tone"]:first-of-type {
+  border-top: none;
 }
 
 .eyebrow {
@@ -234,7 +262,7 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   gap: 1.5rem;
 }
 
-/* Logo vlevo | odkazy uprostřed | Odhad zdarma vpravo (mimo <nav>) — jen desktop */
+/* Logo vlevo | odkazy uprostřed | Odhad zdarma vpravo (mimo <nav>) - jen desktop */
 @media (min-width: 1025px) {
   .header-inner {
     display: grid;
@@ -391,7 +419,7 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   font-size: 0.72rem;
 }
 
-/* CTA v hlavičce — větší než běžné .btn--sm, musí být až za .btn--sm kvůli kaskádě */
+/* CTA v hlavičce - větší než běžné .btn--sm, musí být až za .btn--sm kvůli kaskádě */
 .site-header .header-cta.btn--sm {
   white-space: nowrap;
   text-align: center;
@@ -444,7 +472,7 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   background:
     radial-gradient(ellipse 92% 62% at 88% 10%, rgba(244, 193, 5, 0.09), transparent 54%),
     radial-gradient(ellipse 52% 44% at 14% 88%, rgba(23, 23, 23, 0.035), transparent 50%),
-    linear-gradient(168deg, #ffffff 0%, var(--c-warm) 48%, #ececec 100%);
+    linear-gradient(168deg, #ffffff 0%, #ffffff 55%, var(--c-surface-mid) 100%);
 }
 
 .hero__inner {
@@ -810,6 +838,31 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 }
 
 /* Sold section */
+.properties-empty-wrap {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 2.5rem 1rem;
+  width: 100%;
+}
+
+.properties-empty {
+  margin: 0;
+  max-width: 42ch;
+}
+
+.section--dark .properties-empty--sold {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.section--tone-mid .properties-empty,
+.section--tone-deep .properties-empty {
+  color: var(--c-ink);
+  opacity: 0.72;
+}
+
 .sold-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -829,6 +882,12 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   background: rgba(244, 193, 5, 0.95);
   color: var(--c-black);
   font-weight: 700;
+}
+
+.property-card__media .sold-badge--reserved {
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--c-ink);
+  letter-spacing: 0.12em;
 }
 
 /* Presentation section */
@@ -1075,6 +1134,23 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   gap: 1.5rem;
 }
 
+.dev-empty-wrap {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 2.5rem 1rem;
+  width: 100%;
+}
+
+.dev-empty {
+  margin: 0;
+  max-width: 42ch;
+  color: var(--c-ink);
+  opacity: 0.72;
+}
+
 .dev-card,
 .property-card {
   border-radius: var(--radius-lg);
@@ -1087,7 +1163,7 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 }
 
 .dev-card {
-  min-height: 420px;
+  min-height: 0;
 }
 
 .dev-card .eyebrow,
@@ -1097,8 +1173,10 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 
 .dev-card__media {
   position: relative;
-  flex: 1;
-  min-height: 220px;
+  flex: 0 0 auto;
+  height: clamp(160px, 20vw, 220px);
+  max-height: 220px;
+  overflow: hidden;
 }
 
 .dev-card__media::after {
@@ -1116,9 +1194,11 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 }
 
 .dev-card__media img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
 }
 
 .dev-card__body,
@@ -1221,7 +1301,7 @@ section[aria-labelledby="ref-heading"] {
   cursor: not-allowed;
 }
 
-/* Sociální sekce — vlevo jako .container, vpravo až k okraji okna; bez viditelného scrollbaru */
+/* Sociální sekce - vlevo jako .container, vpravo až k okraji okna; bez viditelného scrollbaru */
 .social-videos-strip {
   margin-top: 2rem;
   padding-left: calc(max(0px, (100vw - 1180px) / 2) + clamp(1.25rem, 5vw, 2.5rem));
@@ -1952,7 +2032,7 @@ section[aria-labelledby="ref-heading"] {
     width: 100%;
   }
 
-  /* Světlý hero mění barvu odkazů v hlavičce; rozbalovací panel je ale tmavý — stejné barvy jako po scrollu */
+  /* Světlý hero mění barvu odkazů v hlavičce; rozbalovací panel je ale tmavý - stejné barvy jako po scrollu */
   body.has-light-hero .site-header:not(.is-scrolled) .header-menu .nav-list a:not(.btn) {
     color: rgba(255, 255, 255, 0.88);
   }
@@ -2002,7 +2082,7 @@ section[aria-labelledby="ref-heading"] {
     --social-video-h: min(52vh, 520px);
   }
 
-  /* Lead / odhad: typ nemovitosti — tlačítka pod sebou na mobilu */
+  /* Lead / odhad: typ nemovitosti - tlačítka pod sebou na mobilu */
   .choice-grid {
     grid-template-columns: 1fr;
   }

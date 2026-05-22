@@ -194,15 +194,130 @@ function initStats() {
   statNums.forEach((el) => io.observe(el));
 }
 
-/* ----- Properties fetch & filter ----- */
+/* ----- Properties (Supabase) ----- */
+let _supabaseClient = null;
+let _propertiesCatalogPromise = null;
+
+async function getSupabase() {
+  if (_supabaseClient) return _supabaseClient;
+  const { createClient } = await import(
+    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
+  );
+  const { SUPABASE_URL, SUPABASE_ANON_KEY } = await import("./supabase-config.js");
+  _supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  return _supabaseClient;
+}
+
+function mapPropertyFromDb(row) {
+  const isRent = row.type === "rent";
+  const link = String(row.link || "").trim();
+  let externalUrl = "";
+  if (/^https?:\/\//i.test(link)) {
+    externalUrl = link;
+  } else if (row.id) {
+    externalUrl = `nemovitost-detail.html?id=${encodeURIComponent(row.id)}`;
+  }
+
+  return {
+    id: row.id,
+    title: row.name,
+    location: row.location,
+    price: row.price == null || row.price === "" ? null : Number(row.price),
+    priceKind: isRent ? "pronajem" : "prodej",
+    type: row.type,
+    image: row.image,
+    gallery: row.image ? [row.image] : [],
+    video: "",
+    description: "",
+    mapQuery: row.location,
+    externalUrl,
+    status: normalizePropertyStatus(row),
+    sold: normalizePropertyStatus(row) === "sold",
+  };
+}
+
+function normalizePropertyStatus(row) {
+  if (row.status === "active" || row.status === "reserved" || row.status === "sold") {
+    return row.status;
+  }
+  if (row.sold === true) return "sold";
+  return "active";
+}
+
+async function fetchPropertiesCatalog() {
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from("properties")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  const all = (data || []).map(mapPropertyFromDb);
+  return {
+    all,
+    active: all.filter((p) => p.status === "active" || p.status === "reserved"),
+    sold: all.filter((p) => p.status === "sold"),
+  };
+}
+
+function getPropertiesCatalog() {
+  if (!_propertiesCatalogPromise) {
+    _propertiesCatalogPromise = fetchPropertiesCatalog();
+  }
+  return _propertiesCatalogPromise;
+}
+
+async function fetchPropertyById(id) {
+  if (!id) return null;
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from("properties")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? mapPropertyFromDb(data) : null;
+}
+
+function propertiesLoadErrorHtml() {
+  return `<p role="alert">Nemovitosti se nepodařilo načíst. Zkuste obnovit stránku.</p>`;
+}
+
+const PROPERTIES_EMPTY = {
+  active: "Aktuálně žádné nabízené nemovitosti.",
+  sold: "Aktuálně žádné ukázkové prodané nemovitosti.",
+};
+
+function propertiesEmptyHtml(kind) {
+  const isSold = kind === "sold";
+  const text = isSold ? PROPERTIES_EMPTY.sold : PROPERTIES_EMPTY.active;
+  return `<div class="properties-empty-wrap">
+    <p class="lead properties-empty${isSold ? " properties-empty--sold" : ""}">${text}</p>
+  </div>`;
+}
+
 function formatPrice(n) {
   return (
     new Intl.NumberFormat("cs-CZ", { maximumFractionDigits: 0 }).format(n) + " Kč"
   );
 }
 
-/** Cena na kartě a detailu - prodej (Kč) vs pronájem (Kč/měsíc) */
+function hasPropertyPrice(p) {
+  return p.price != null && p.price !== "" && !Number.isNaN(Number(p.price));
+}
+
+/** Cena na kartě a detailu – prodáno / pronajato / neznámá / částka */
 function formatPropertyPrice(p) {
+  if (p.status === "sold") {
+    return p.type === "rent" || p.priceKind === "pronajem" ? "Pronajato" : "Prodáno";
+  }
+
+  if (!hasPropertyPrice(p)) {
+    return "Neznámá";
+  }
+
   const num = new Intl.NumberFormat("cs-CZ", { maximumFractionDigits: 0 }).format(p.price);
   if (p.priceKind === "pronajem") {
     return `${num} Kč/měsíc`;
@@ -210,11 +325,19 @@ function formatPropertyPrice(p) {
   return `${num} Kč`;
 }
 
-function renderPropertyCard(p, { sold = false } = {}) {
+function renderPropertyCard(p, { soldView = false } = {}) {
   const typeAttr = p.type ? ` data-type="${p.type}"` : "";
-  const soldClass = sold ? " property-card--sold" : "";
-  const badge = sold ? `<span class="sold-badge">Prodáno</span>` : "";
-  const externalUrl = !sold && p.externalUrl ? String(p.externalUrl).trim() : "";
+  const isSold = soldView || p.status === "sold";
+  const soldClass = isSold ? " property-card--sold" : "";
+  let badge = "";
+  if (isSold) {
+    const badgeLabel =
+      p.type === "rent" || p.priceKind === "pronajem" ? "Pronajato" : "Prodáno";
+    badge = `<span class="sold-badge">${badgeLabel}</span>`;
+  } else if (p.status === "reserved") {
+    badge = `<span class="sold-badge sold-badge--reserved">Rezervováno</span>`;
+  }
+  const externalUrl = !isSold && p.externalUrl ? String(p.externalUrl).trim() : "";
   const link = externalUrl
     ? `<a class="property-card__link" href="${externalUrl}" target="_blank" rel="noopener noreferrer" aria-label="Detail nemovitosti: ${p.title}"></a>`
     : "";
@@ -238,20 +361,22 @@ async function loadPropertiesList(containerSelector, options = {}) {
   const root = document.querySelector(containerSelector);
   if (!root) return [];
   try {
-    const res = await fetch("data/properties.json");
-    const list = await res.json();
+    const { active } = await getPropertiesCatalog();
     const limit = options.limit;
-    const items = typeof limit === "number" ? list.slice(0, limit) : list;
-    root.innerHTML = items.map((p) => renderPropertyCard(p)).join("");
-    return list;
+    const items = typeof limit === "number" ? active.slice(0, limit) : active;
+    root.innerHTML = items.length
+      ? items.map((p) => renderPropertyCard(p)).join("")
+      : propertiesEmptyHtml("active");
+    return active;
   } catch (e) {
-    root.innerHTML = `<p role="alert">Obsah se nepodařilo načíst. Spusťte web přes lokální server.</p>`;
+    console.error("Properties load error:", e);
+    root.innerHTML = propertiesLoadErrorHtml();
     return [];
   }
 }
 
-function renderPropertyGrid(root, items, { sold = false } = {}) {
-  root.innerHTML = items.map((p) => renderPropertyCard(p, { sold })).join("");
+function renderPropertyGrid(root, items, { soldView = false } = {}) {
+  root.innerHTML = items.map((p) => renderPropertyCard(p, { soldView })).join("");
 }
 
 async function initPropertiesPage() {
@@ -265,20 +390,23 @@ async function initPropertiesPage() {
   let sold = [];
 
   try {
-    const [pRes, sRes] = await Promise.all([
-      fetch("data/properties.json"),
-      fetch("data/sold.json"),
-    ]);
-    properties = await pRes.json();
-    sold = await sRes.json();
-  } catch {
-    root.innerHTML = `<p role="alert">Obsah se nepodařilo načíst. Spusťte web přes lokální server.</p>`;
+    const catalog = await getPropertiesCatalog();
+    properties = catalog.active;
+    sold = catalog.sold;
+  } catch (e) {
+    console.error("Properties page load error:", e);
+    root.innerHTML = propertiesLoadErrorHtml();
     return;
   }
 
   const setView = (view) => {
     const isSold = view === "prodano";
-    renderPropertyGrid(root, isSold ? sold : properties, { sold: isSold });
+    const items = isSold ? sold : properties;
+    if (!items.length) {
+      root.innerHTML = propertiesEmptyHtml(isSold ? "sold" : "active");
+    } else {
+      renderPropertyGrid(root, items, { soldView: isSold });
+    }
     buttons.forEach((b) =>
       b.classList.toggle("is-active", b.getAttribute("data-property-view") === view)
     );
@@ -291,34 +419,78 @@ async function initPropertiesPage() {
   });
 }
 
-/* ----- Sold ----- */
+/* ----- Sold (Supabase) ----- */
 async function loadSold(selector) {
   const root = document.querySelector(selector);
   if (!root) return;
   try {
-    const res = await fetch("data/sold.json");
-    const list = await res.json();
-    root.innerHTML = list.map((s) => renderPropertyCard(s, { sold: true })).join("");
-  } catch {
+    const { sold } = await getPropertiesCatalog();
+    root.innerHTML = sold.length
+      ? sold.map((s) => renderPropertyCard(s, { soldView: true })).join("")
+      : propertiesEmptyHtml("sold");
+  } catch (e) {
+    console.error("Sold properties load error:", e);
     root.innerHTML = "";
   }
 }
 
-/* ----- Projects ----- */
-async function loadProjects(selector, limit) {
-  const root = document.querySelector(selector);
-  if (!root) return;
+/* ----- Projects (Supabase) ----- */
+let _projectsPromise = null;
+
+function mapProjectFromDb(row) {
+  const link = String(row.link || "").trim();
+  return {
+    id: row.id,
+    title: row.name,
+    location: row.location,
+    summary: row.description || "",
+    image: row.image,
+    externalUrl: link || "https://hvreality.cz/",
+  };
+}
+
+async function fetchProjects() {
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from("projects")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data || []).map(mapProjectFromDb);
+}
+
+function getProjects() {
+  if (!_projectsPromise) {
+    _projectsPromise = fetchProjects();
+  }
+  return _projectsPromise;
+}
+
+/** Počet projektů v hero statistikách (úvodní stránka). */
+async function syncDevProjectsStatCount() {
+  const el = document.querySelector('[data-stat="dev-projects"]');
+  if (!el) return;
   try {
-    const res = await fetch("data/projects.json");
-    let list = await res.json();
-    if (limit) list = list.slice(0, limit);
-    root.innerHTML = list
-      .map((p) => {
-        const webUrl =
-          p.externalUrl && String(p.externalUrl).trim().length
-            ? String(p.externalUrl).trim()
-            : "https://hvreality.cz/";
-        return `
+    const projects = await getProjects();
+    el.setAttribute("data-count", String(projects.length));
+  } catch (e) {
+    console.error("Dev projects stat load error:", e);
+  }
+}
+
+function projectsEmptyHtml() {
+  return `<div class="dev-empty-wrap">
+    <p class="lead dev-empty">Aktuálně žádné developerské projekty.</p>
+  </div>`;
+}
+
+function renderDevCard(p) {
+  const webUrl =
+    p.externalUrl && String(p.externalUrl).trim().length
+      ? String(p.externalUrl).trim()
+      : "https://hvreality.cz/";
+  return `
       <article class="dev-card">
         <div class="dev-card__media">
           <img src="${p.image}" alt="" loading="lazy" />
@@ -332,10 +504,20 @@ async function loadProjects(selector, limit) {
           </div>
         </div>
       </article>`;
-      })
-      .join("");
-  } catch {
-    root.innerHTML = "";
+}
+
+async function loadProjects(selector, limit) {
+  const root = document.querySelector(selector);
+  if (!root) return;
+  try {
+    let list = await getProjects();
+    if (limit) list = list.slice(0, limit);
+    root.innerHTML = list.length
+      ? list.map((p) => renderDevCard(p)).join("")
+      : projectsEmptyHtml();
+  } catch (e) {
+    console.error("Projects load error:", e);
+    root.innerHTML = `<p role="alert">Projekty se nepodařilo načíst.</p>`;
   }
 }
 
@@ -564,7 +746,7 @@ async function loadTestimonials(options = {}) {
   }
 }
 
-/* ----- Sociální videa — jeden řádek, horizontální posuv ----- */
+/* ----- Sociální videa - jeden řádek, horizontální posuv ----- */
 function initSocialVideosCarousel() {
   const viewport = document.getElementById("social-videos-viewport");
   const prevBtn = document.getElementById("social-v-prev");
@@ -1140,7 +1322,6 @@ async function boot() {
   if (y) y.textContent = String(new Date().getFullYear());
 
   initReveal();
-  initStats();
   initVideoLightbox();
   initLeadForm();
   initParallax();
@@ -1148,7 +1329,13 @@ async function boot() {
   const path = (window.location.pathname.split("/").pop() || "index.html").split("?")[0];
 
   if (path === "index.html" || path === "") {
-    await loadPropertiesList("#property-grid-home");
+    await syncDevProjectsStatCount();
+  }
+
+  initStats();
+
+  if (path === "index.html" || path === "") {
+    await loadPropertiesList("#property-grid-home", { limit: 3 });
     await loadSold("#sold-grid-home");
     await loadProjects("#dev-grid-home", 3);
     await loadServices("#services-grid-home", 4);
@@ -1203,10 +1390,11 @@ async function initPropertyDetail() {
   const videoBtn = document.getElementById("detail-video-btn");
 
   try {
-    const res = await fetch("data/properties.json");
-    const list = await res.json();
-    const p = list.find((x) => x.id === id) || list[0];
-    if (!p) return;
+    const p = (await fetchPropertyById(id)) || (await getPropertiesCatalog()).active[0];
+    if (!p) {
+      if (titleEl) titleEl.textContent = "Nemovitost nenalezena";
+      return;
+    }
     document.title = `${p.title} | Monika Zelená`;
     if (titleEl) titleEl.textContent = p.title;
     if (priceEl) priceEl.textContent = formatPropertyPrice(p);

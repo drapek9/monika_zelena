@@ -16,7 +16,7 @@
     />
     <link rel="stylesheet" href="assets/css/styles.css" />
   </head>
-  <body class="has-light-hero">
+  <body class="has-light-hero page-home">
     <div class="page-loader" id="page-loader" aria-live="polite" aria-busy="true">
       <div class="loader-line" role="presentation"></div>
     </div>
@@ -75,7 +75,9 @@
               <div class="stat-float__label">realizovaných transakcí</div>
             </div>
             <div class="stat-float">
-              <div class="stat-float__value"><span data-count="3" data-suffix="">0</span></div>
+              <div class="stat-float__value">
+                <span data-stat="dev-projects" data-count="0" data-suffix="">0</span>
+              </div>
               <div class="stat-float__label">aktuální developerské projekty</div>
             </div>
           </div>
@@ -83,7 +85,7 @@
       </section>
 
       <!-- SLUŽBY -->
-      <section class="section section--warm" id="sluzby" aria-labelledby="services-heading">
+      <section class="section section--tone-light" id="sluzby" aria-labelledby="services-heading">
         <div class="container">
           <div data-reveal class="text-center" style="max-width: 720px; margin-inline: auto">
             <p class="eyebrow">Služby</p>
@@ -98,7 +100,7 @@
       </section>
 
       <!-- O MONICE -->
-      <section class="section" id="o-monice" aria-labelledby="about-heading">
+      <section class="section section--tone-mid" id="o-monice" aria-labelledby="about-heading">
         <div class="container split">
           <div class="split__visual" data-reveal>
             <img
@@ -129,7 +131,7 @@
       </section>
 
       <!-- PREZENTACE -->
-      <section class="section section--warm" id="prezentace" aria-labelledby="pres-heading">
+      <section class="section section--tone-deep" id="prezentace" aria-labelledby="pres-heading">
         <div class="container presentation-layout">
           <div class="presentation-layout__intro" data-reveal>
             <p class="eyebrow">Prezentace</p>
@@ -178,7 +180,7 @@
       </section>
 
       <!-- NABÍDKA -->
-      <section class="section" id="nabidka" aria-labelledby="list-heading">
+      <section class="section section--tone-light" id="nabidka" aria-labelledby="list-heading">
         <div class="container">
           <div data-reveal>
             <p class="eyebrow">Aktuálně</p>
@@ -195,11 +197,11 @@
       </section>
 
       <!-- PRODANÉ -->
-      <section class="section section--dark" aria-labelledby="sold-heading">
+      <section class="section section--tone-mid" aria-labelledby="sold-heading">
         <div class="container">
           <div data-reveal>
             <p class="eyebrow">Důvěra</p>
-            <h2 id="sold-heading" style="color: #fff">Prodané nemovitosti</h2>
+            <h2 id="sold-heading">Prodané nemovitosti</h2>
             <p class="lead" style="margin-bottom: 2rem">Výsledky místo slibů - decentní „Prodáno“ jako potvrzení procesu.</p>
           </div>
           <div class="sold-grid" id="sold-grid-home" data-reveal></div>
@@ -207,19 +209,24 @@
       </section>
 
       <!-- DEV PROJEKTY -->
-      <section class="section section--warm" id="projekty" aria-labelledby="dev-heading">
+      <section class="section section--tone-deep" id="projekty" aria-labelledby="dev-heading">
         <div class="container">
           <div data-reveal>
             <p class="eyebrow">Development</p>
-            <h2 id="dev-heading">Developerské projekty</h2>
-            <p class="lead">Tři aktivní projekty - prémiová prezentace a práce s databází kupujících.</p>
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1.5rem; align-items: end">
+              <div>
+                <h2 id="dev-heading">Developerské projekty</h2>
+                <p class="lead mb-0">Projekty, na kterých aktuálně pracuji — spolupráce s developery od prezentace po prodej.</p>
+              </div>
+              <a href="developerske-projekty.html" class="btn btn--outline-dark">Všechny projekty</a>
+            </div>
           </div>
           <div class="dev-grid mt-md" id="dev-grid-home" data-reveal style="margin-top: 2.5rem"></div>
         </div>
       </section>
 
       <!-- REFERENCE -->
-      <section class="section" aria-labelledby="ref-heading">
+      <section class="section section--tone-light" aria-labelledby="ref-heading">
         <div class="container">
           <div data-reveal style="max-width: 520px">
             <p class="eyebrow">Reference</p>
@@ -238,7 +245,7 @@
       </section>
 
       <!-- SOCIÁLNÍ -->
-      <section class="section section--warm" aria-labelledby="social-heading">
+      <section class="section section--tone-mid" aria-labelledby="social-heading">
         <div class="container">
           <div data-reveal>
             <p class="eyebrow">Sociální sítě</p>
@@ -259,7 +266,7 @@
               id="social-videos-viewport"
               tabindex="0"
               role="region"
-              aria-label="Videa ze sociálních sítí — posuv šipkami nebo kolečkem"
+              aria-label="Videa ze sociálních sítí - posuv šipkami nebo kolečkem"
             >
               <div class="social-videos-row">
                 <video controls playsinline preload="metadata" src="videa/jedna.mp4" title="Ukázka 1"></video>
@@ -273,7 +280,7 @@
       </section>
 
       <!-- LEAD -->
-      <section class="section" id="lead" aria-labelledby="lead-heading">
+      <section class="section section--tone-deep" id="lead" aria-labelledby="lead-heading">
         <div class="container">
           <div data-reveal style="max-width: 560px">
             <p class="eyebrow">Začněme</p>

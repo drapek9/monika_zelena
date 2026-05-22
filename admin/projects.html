@@ -4,14 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
-    <title>Dashboard | Admin nemovitostí</title>
+    <title>Projekty | Admin</title>
     <link rel="stylesheet" href="css/admin.css" />
   </head>
   <body class="admin-body">
     <div class="admin-wrap">
       <header class="admin-header">
         <div>
-          <h1>Správa nemovitostí</h1>
+          <h1>Správa projektů</h1>
           <p class="admin-user" id="user-email"></p>
         </div>
         <button type="button" class="admin-btn admin-btn--ghost" id="logout-btn">
@@ -20,60 +20,45 @@
       </header>
 
       <nav class="admin-nav" aria-label="Sekce administrace">
-        <a href="dashboard.html" class="admin-btn admin-btn--primary admin-btn--sm is-active">Nemovitosti</a>
-        <a href="projects.html" class="admin-btn admin-btn--ghost admin-btn--sm">Projekty</a>
+        <a href="dashboard.html" class="admin-btn admin-btn--ghost admin-btn--sm">Nemovitosti</a>
+        <a href="projects.html" class="admin-btn admin-btn--primary admin-btn--sm is-active">Projekty</a>
       </nav>
 
-      <section class="admin-section admin-card" id="property-form-section" aria-labelledby="form-heading">
-        <h2 id="form-heading">Přidat nemovitost</h2>
+      <section class="admin-section admin-card" id="project-form-section" aria-labelledby="form-heading">
+        <h2 id="form-heading">Přidat projekt</h2>
         <p id="form-editing-hint" class="admin-hint" hidden></p>
         <div id="form-success" class="admin-alert admin-alert--success" hidden role="status"></div>
         <div id="form-error" class="admin-alert admin-alert--error" hidden role="alert"></div>
 
-        <form id="property-form" class="admin-form">
+        <form id="project-form" class="admin-form">
           <div class="admin-form-grid">
             <div class="admin-field">
               <label for="name">Název *</label>
               <input type="text" id="name" name="name" required maxlength="500" />
             </div>
             <div class="admin-field">
-              <label for="price">Cena (Kč)</label>
-              <input type="number" id="price" name="price" min="0" step="1" placeholder="Volitelné" />
-            </div>
-            <div class="admin-field">
               <label for="location">Lokalita *</label>
               <input type="text" id="location" name="location" required maxlength="300" />
             </div>
-            <div class="admin-field">
-              <label for="type">Typ *</label>
-              <select id="type" name="type" required>
-                <option value="sale">Prodej (sale)</option>
-                <option value="rent">Pronájem (rent)</option>
-              </select>
+            <div class="admin-field admin-field--wide">
+              <label for="description">Popis *</label>
+              <textarea id="description" name="description" required maxlength="3000" rows="4"></textarea>
             </div>
-            <div class="admin-field">
-              <label for="status">Stav *</label>
-              <select id="status" name="status" required>
-                <option value="active">Aktivní</option>
-                <option value="reserved">Rezervovaná</option>
-                <option value="sold">Prodáno</option>
-              </select>
-            </div>
-            <div class="admin-field">
-              <label for="link">Odkaz / slug *</label>
+            <div class="admin-field admin-field--wide">
+              <label for="link">Odkaz na projekt *</label>
               <input
-                type="text"
+                type="url"
                 id="link"
                 name="link"
                 required
-                maxlength="500"
-                placeholder="např. hv-jihlava-pronajem-3kk"
+                maxlength="1000"
+                placeholder="https://…"
               />
             </div>
             <div class="admin-field admin-field--wide admin-image-field">
               <span class="admin-field-label" id="image-label">Obrázek *</span>
               <p class="admin-hint" id="image-hint">
-                Vložte URL, nebo nahrajte soubor do úložiště.
+                Vložte URL, nebo nahrajte soubor do úložiště Supabase (project_images).
               </p>
 
               <div class="admin-image-tabs" role="tablist" aria-labelledby="image-label">
@@ -87,13 +72,7 @@
 
               <div id="image-panel-url" class="admin-image-panel">
                 <label for="image-url" class="visually-hidden">URL obrázku</label>
-                <input
-                  type="text"
-                  id="image-url"
-                  name="image-url"
-                  maxlength="1000"
-                  placeholder="https://… nebo images/foto.webp"
-                />
+                <input type="text" id="image-url" name="image-url" maxlength="1000" placeholder="https://…" />
               </div>
 
               <div id="image-panel-file" class="admin-image-panel" hidden>
@@ -110,48 +89,34 @@
             </div>
           </div>
           <div class="admin-form-actions">
-            <button type="submit" class="admin-btn admin-btn--primary" id="form-submit">
-              Uložit nemovitost
-            </button>
-            <button type="button" class="admin-btn admin-btn--ghost" id="form-cancel" hidden>
-              Zrušit úpravu
-            </button>
+            <button type="submit" class="admin-btn admin-btn--primary" id="form-submit">Uložit projekt</button>
+            <button type="button" class="admin-btn admin-btn--ghost" id="form-cancel" hidden>Zrušit úpravu</button>
           </div>
         </form>
       </section>
 
       <section class="admin-section admin-card" aria-labelledby="list-heading">
-        <h2 id="list-heading">Seznam nemovitostí</h2>
+        <h2 id="list-heading">Seznam projektů</h2>
 
         <div class="admin-toolbar">
-          <div class="admin-filter" role="group" aria-label="Filtr stavu">
-            <button type="button" class="is-active" data-filter="all">Vše</button>
-            <button type="button" data-filter="active">Aktivní</button>
-            <button type="button" data-filter="reserved">Rezervované</button>
-            <button type="button" data-filter="sold">Prodáno</button>
-          </div>
-          <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" id="refresh-btn">
-            Obnovit
-          </button>
+          <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" id="refresh-btn">Obnovit</button>
         </div>
 
         <div id="list-error" class="admin-alert admin-alert--error" hidden role="alert"></div>
         <div id="list-loading" class="admin-loading">Načítám…</div>
-        <div id="list-empty" class="admin-empty" hidden>Žádné nemovitosti k zobrazení.</div>
+        <div id="list-empty" class="admin-empty" hidden>Žádné projekty.</div>
 
         <div class="admin-table-wrap" id="table-wrap" hidden>
-          <table class="admin-table" id="properties-table">
+          <table class="admin-table" id="projects-table">
             <thead>
               <tr>
                 <th>Název</th>
-                <th>Cena</th>
                 <th>Lokalita</th>
-                <th>Typ</th>
-                <th>Stav</th>
+                <th>Odkaz</th>
                 <th>Akce</th>
               </tr>
             </thead>
-            <tbody id="properties-tbody"></tbody>
+            <tbody id="projects-tbody"></tbody>
           </table>
         </div>
       </section>
@@ -162,6 +127,6 @@
       </p>
     </div>
 
-    <script type="module" src="js/dashboard.js"></script>
+    <script type="module" src="js/projects.js"></script>
   </body>
 </html>

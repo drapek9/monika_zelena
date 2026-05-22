@@ -50,6 +50,17 @@ body.admin-body {
   font-weight: 600;
 }
 
+.admin-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin-nav a.is-active {
+  pointer-events: none;
+}
+
 .admin-card {
   background: var(--admin-surface);
   border: 1px solid var(--admin-border);
@@ -101,7 +112,8 @@ body.admin-body {
 }
 
 .admin-field input,
-.admin-field select {
+.admin-field select,
+.admin-field textarea {
   width: 100%;
   padding: 0.55rem 0.75rem;
   font: inherit;
@@ -110,8 +122,14 @@ body.admin-body {
   background: #fff;
 }
 
+.admin-field textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
 .admin-field input:focus,
-.admin-field select:focus {
+.admin-field select:focus,
+.admin-field textarea:focus {
   outline: 2px solid var(--admin-accent);
   outline-offset: 1px;
   border-color: var(--admin-accent);
@@ -367,6 +385,31 @@ body.admin-body {
 .admin-badge--active {
   color: #1f4a2d;
   background: #e8f5ec;
+}
+
+.admin-badge--reserved {
+  color: #4a3d1a;
+  background: #f5f0e3;
+}
+
+.admin-status-select {
+  min-width: 8.5rem;
+  padding: 0.35rem 0.5rem;
+  font: inherit;
+  font-size: 0.85rem;
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.admin-status-select:focus {
+  outline: 2px solid var(--admin-accent);
+  outline-offset: 1px;
+}
+
+.admin-status-select:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 .admin-actions {
