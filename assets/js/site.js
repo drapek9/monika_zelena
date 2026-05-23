@@ -556,193 +556,383 @@ async function loadServices(selector, limit) {
   }
 }
 
-/* ----- Testimonials -----
-   Nekonečný posuv ve stejném směru: duplicitní řada v DOM, po scrollIndex === N stejný výřez jako na 0 → okamžitý přeskok bez „zpětné“ animace. */
-async function loadTestimonials(options = {}) {
-  const viewportId = options.viewportId || "testimonial-viewport";
-  const trackId = options.trackId || "testimonial-track";
-  const prevId = options.prevId || "t-prev";
-  const nextId = options.nextId || "t-next";
+/* ----- Nekonečný horizontální karusel (reference, nemovitosti na domů) -----
+   Duplicitní řada v DOM; po scrollIndex === N stejný výřez jako 0 → okamžitý přeskok. */
+function setCarouselNavVisible(prev, next, visible) {
+  [prev, next].forEach((btn) => {
+    if (!btn) return;
+    btn.hidden = !visible;
+    btn.setAttribute("aria-hidden", visible ? "false" : "true");
+  });
+}
 
-  const viewport = document.getElementById(viewportId);
-  const track = document.getElementById(trackId);
-  if (!track || !viewport) return;
+function initInfiniteCarousel({
+  viewport,
+  track,
+  prev,
+  next,
+  items,
+  cardSelector,
+  minItemsToLoop = null,
+  autoplayMs = 0,
+}) {
+  if (!track || !viewport || !items?.length) return;
 
+  const N = items.length;
   let scrollIndex = 0;
-  let testimonialTimer = null;
+  let autoplayTimer = null;
+
+  function visibleCount() {
+    const w = window.innerWidth;
+    if (w < 640) return 1;
+    if (w < 960) return 2;
+    return 3;
+  }
+
+  function canInfinite() {
+    if (typeof minItemsToLoop === "number") return N > minItemsToLoop;
+    return N > visibleCount();
+  }
+
+  function applyTransform(stepPx, instant) {
+    if (instant) track.style.transition = "none";
+    track.style.transform = `translateX(-${scrollIndex * stepPx}px)`;
+    if (instant) {
+      void track.offsetHeight;
+      track.style.removeProperty("transition");
+    }
+  }
+
+  function layout(opts = {}) {
+    const vc = visibleCount();
+    const gapPx = parseFloat(getComputedStyle(track).gap) || 0;
+    const vw = viewport.clientWidth;
+    const cardW = vc > 0 ? (vw - (vc - 1) * gapPx) / vc : vw;
+
+    track.querySelectorAll(cardSelector).forEach((el) => {
+      el.style.flex = `0 0 ${cardW}px`;
+    });
+
+    const step = cardW + gapPx;
+
+    if (!canInfinite()) {
+      scrollIndex = 0;
+      applyTransform(step, true);
+      setCarouselNavVisible(prev, next, false);
+      stopTimer();
+      return;
+    }
+
+    scrollIndex = Math.min(scrollIndex, N);
+    applyTransform(step, opts.instant === true);
+    setCarouselNavVisible(prev, next, true);
+    if (prev) prev.disabled = false;
+    if (next) next.disabled = false;
+  }
+
+  function snapAfterLoop(step) {
+    if (scrollIndex !== N) return;
+    scrollIndex = 0;
+    applyTransform(step, true);
+  }
+
+  function onTrackTransitionEnd(e) {
+    if (e.propertyName !== "transform" || e.target !== track) return;
+    const gapPx = parseFloat(getComputedStyle(track).gap) || 0;
+    const vw = viewport.clientWidth;
+    const vc = visibleCount();
+    const cardW = vc > 0 ? (vw - (vc - 1) * gapPx) / vc : vw;
+    snapAfterLoop(cardW + gapPx);
+  }
+
+  track.addEventListener("transitionend", onTrackTransitionEnd);
+
+  function go(delta) {
+    if (!canInfinite()) return;
+    const gapPx = parseFloat(getComputedStyle(track).gap) || 0;
+    const vw = viewport.clientWidth;
+    const vc = visibleCount();
+    const cardW = vc > 0 ? (vw - (vc - 1) * gapPx) / vc : vw;
+    const step = cardW + gapPx;
+
+    if (prefersReducedMotion) {
+      if (delta > 0) {
+        scrollIndex += 1;
+        if (scrollIndex >= N) scrollIndex = 0;
+      } else if (scrollIndex > 0) {
+        scrollIndex -= 1;
+      } else {
+        scrollIndex = N - 1;
+      }
+      layout({ instant: true });
+      return;
+    }
+
+    if (delta > 0) {
+      if (scrollIndex < N) {
+        scrollIndex += 1;
+        layout();
+      }
+      return;
+    }
+
+    if (scrollIndex > 0) {
+      scrollIndex -= 1;
+      layout();
+      return;
+    }
+
+    track.style.transition = "none";
+    scrollIndex = N;
+    applyTransform(step, true);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        track.style.removeProperty("transition");
+        scrollIndex = N - 1;
+        layout();
+      });
+    });
+  }
+
+  function stopTimer() {
+    if (autoplayTimer) {
+      clearInterval(autoplayTimer);
+      autoplayTimer = null;
+    }
+  }
+
+  function startTimer() {
+    stopTimer();
+    if (!autoplayMs || prefersReducedMotion || !canInfinite()) return;
+    autoplayTimer = window.setInterval(() => go(1), autoplayMs);
+  }
+
+  function restartAutoplayAfterManualNav() {
+    stopTimer();
+    startTimer();
+  }
+
+  prev?.addEventListener("click", () => {
+    go(-1);
+    restartAutoplayAfterManualNav();
+  });
+  next?.addEventListener("click", () => {
+    go(1);
+    restartAutoplayAfterManualNav();
+  });
+
+  const ro = new ResizeObserver(() => layout({ instant: true }));
+  ro.observe(viewport);
+  requestAnimationFrame(() => layout());
+  startTimer();
+  track.addEventListener("mouseenter", stopTimer);
+  track.addEventListener("mouseleave", startTimer);
+
+  return { relayout: () => layout({ instant: true }) };
+}
+
+function scheduleCarouselRelayoutOnReveal(sliderWrap, relayout) {
+  if (!sliderWrap || typeof relayout !== "function") return;
+  if (sliderWrap.classList.contains("is-visible")) {
+    relayout();
+    return;
+  }
+  const io = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((e) => e.isIntersecting)) {
+        relayout();
+        io.disconnect();
+      }
+    },
+    { threshold: 0.05 }
+  );
+  io.observe(sliderWrap);
+}
+
+function buildInfiniteTrackHtml(items, renderItem, duplicate) {
+  const cardHtml = items.map((item) => renderItem(item)).join("");
+  return duplicate && items.length >= 2 ? cardHtml + cardHtml : cardHtml;
+}
+
+async function loadTestimonials(options = {}) {
+  const viewport = document.getElementById(options.viewportId || "testimonial-viewport");
+  const track = document.getElementById(options.trackId || "testimonial-track");
+  const prev = document.getElementById(options.prevId || "t-prev");
+  const next = document.getElementById(options.nextId || "t-next");
+  if (!track || !viewport) return;
 
   try {
     const res = await fetch("data/testimonials.json");
     const list = await res.json();
-    const N = list.length;
-
-    const cardHtml = list
-      .map(
-        (t) => `
+    track.innerHTML = buildInfiniteTrackHtml(
+      list,
+      (t) => `
       <article class="testimonial-card">
         <p class="testimonial-card__quote">„${t.quote}“</p>
         <p class="testimonial-card__author">${t.name}</p>
-      </article>`
-      )
-      .join("");
-    track.innerHTML = N >= 2 ? cardHtml + cardHtml : cardHtml;
-
-    const prev = document.getElementById(prevId);
-    const next = document.getElementById(nextId);
-
-    function visibleCount() {
-      const w = window.innerWidth;
-      if (w < 640) return 1;
-      if (w < 960) return 2;
-      return 3;
-    }
-
-    function canInfinite() {
-      return N > visibleCount();
-    }
-
-    function applyTransform(stepPx, instant) {
-      if (instant) {
-        track.style.transition = "none";
-      }
-      track.style.transform = `translateX(-${scrollIndex * stepPx}px)`;
-      if (instant) {
-        void track.offsetHeight;
-        track.style.removeProperty("transition");
-      }
-    }
-
-    function layout(opts = {}) {
-      const vc = visibleCount();
-      const gapPx = parseFloat(getComputedStyle(track).gap) || 0;
-      const vw = viewport.clientWidth;
-      const cardW = vc > 0 ? (vw - (vc - 1) * gapPx) / vc : vw;
-
-      track.querySelectorAll(".testimonial-card").forEach((el) => {
-        el.style.flex = `0 0 ${cardW}px`;
-      });
-
-      const step = cardW + gapPx;
-
-      if (!canInfinite()) {
-        scrollIndex = 0;
-        applyTransform(step, true);
-        if (prev) prev.disabled = true;
-        if (next) next.disabled = true;
-        stopTimer();
-        return;
-      }
-
-      scrollIndex = Math.min(scrollIndex, N);
-      applyTransform(step, opts.instant === true);
-
-      if (prev) prev.disabled = false;
-      if (next) next.disabled = false;
-    }
-
-    function snapAfterLoop(step) {
-      if (scrollIndex !== N) return;
-      scrollIndex = 0;
-      applyTransform(step, true);
-    }
-
-    function onTrackTransitionEnd(e) {
-      if (e.propertyName !== "transform" || e.target !== track) return;
-      const gapPx = parseFloat(getComputedStyle(track).gap) || 0;
-      const vw = viewport.clientWidth;
-      const vc = visibleCount();
-      const cardW = vc > 0 ? (vw - (vc - 1) * gapPx) / vc : vw;
-      const step = cardW + gapPx;
-      snapAfterLoop(step);
-    }
-
-    track.addEventListener("transitionend", onTrackTransitionEnd);
-
-    function go(delta) {
-      if (!canInfinite()) return;
-      const vc = visibleCount();
-      const gapPx = parseFloat(getComputedStyle(track).gap) || 0;
-      const vw = viewport.clientWidth;
-      const cardW = vc > 0 ? (vw - (vc - 1) * gapPx) / vc : vw;
-      const step = cardW + gapPx;
-
-      if (prefersReducedMotion) {
-        if (delta > 0) {
-          scrollIndex += 1;
-          if (scrollIndex >= N) scrollIndex = 0;
-        } else if (scrollIndex > 0) {
-          scrollIndex -= 1;
-        } else {
-          scrollIndex = N - 1;
-        }
-        layout({ instant: true });
-        return;
-      }
-
-      if (delta > 0) {
-        if (scrollIndex < N) {
-          scrollIndex += 1;
-          layout();
-        }
-        return;
-      }
-
-      if (scrollIndex > 0) {
-        scrollIndex -= 1;
-        layout();
-        return;
-      }
-
-      track.style.transition = "none";
-      scrollIndex = N;
-      applyTransform(step, true);
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          track.style.removeProperty("transition");
-          scrollIndex = N - 1;
-          layout();
-        });
-      });
-    }
-
-    function restartAutoplayAfterManualNav() {
-      stopTimer();
-      startTimer();
-    }
-
-    prev?.addEventListener("click", () => {
-      go(-1);
-      restartAutoplayAfterManualNav();
+      </article>`,
+      true
+    );
+    initInfiniteCarousel({
+      viewport,
+      track,
+      prev,
+      next,
+      items: list,
+      cardSelector: ".testimonial-card",
+      autoplayMs: 4000,
     });
-    next?.addEventListener("click", () => {
-      go(1);
-      restartAutoplayAfterManualNav();
-    });
-
-    function stopTimer() {
-      if (testimonialTimer) {
-        clearInterval(testimonialTimer);
-        testimonialTimer = null;
-      }
-    }
-
-    function startTimer() {
-      stopTimer();
-      if (prefersReducedMotion || !canInfinite()) return;
-      testimonialTimer = window.setInterval(() => {
-        go(1);
-      }, 4000);
-    }
-
-    const ro = new ResizeObserver(() => layout({ instant: true }));
-    ro.observe(viewport);
-    requestAnimationFrame(() => layout());
-
-    startTimer();
-    track.addEventListener("mouseenter", stopTimer);
-    track.addEventListener("mouseleave", startTimer);
   } catch {
     track.innerHTML = "";
+  }
+}
+
+function initHomeCarouselSection({
+  grid,
+  sliderWrap,
+  viewport,
+  track,
+  prev,
+  next,
+  items,
+  renderItem,
+  cardSelector,
+  emptyHtml,
+  errorHtml,
+  logLabel,
+}) {
+  if (!grid) return;
+
+  try {
+    if (!items.length) {
+      if (sliderWrap) sliderWrap.hidden = true;
+      setCarouselNavVisible(prev, next, false);
+      if (track) track.innerHTML = "";
+      grid.hidden = false;
+      grid.innerHTML = emptyHtml;
+      return;
+    }
+
+    if (items.length <= 3) {
+      if (sliderWrap) sliderWrap.hidden = true;
+      setCarouselNavVisible(prev, next, false);
+      if (track) track.innerHTML = "";
+      grid.hidden = false;
+      grid.innerHTML = items.map((item) => renderItem(item)).join("");
+      return;
+    }
+
+    if (sliderWrap && track && viewport) {
+      sliderWrap.hidden = false;
+      setCarouselNavVisible(prev, next, true);
+      grid.hidden = true;
+      track.innerHTML = buildInfiniteTrackHtml(items, renderItem, true);
+      void viewport.offsetWidth;
+      const carousel = initInfiniteCarousel({
+        viewport,
+        track,
+        prev,
+        next,
+        items,
+        cardSelector,
+        minItemsToLoop: 3,
+        autoplayMs: 0,
+      });
+      if (carousel) {
+        const relayout = () => carousel.relayout();
+        requestAnimationFrame(() => requestAnimationFrame(relayout));
+        scheduleCarouselRelayoutOnReveal(sliderWrap, relayout);
+      }
+      return;
+    }
+
+    grid.hidden = false;
+    grid.innerHTML = items.map((item) => renderItem(item)).join("");
+  } catch (e) {
+    console.error(`${logLabel} home load error:`, e);
+    if (sliderWrap) sliderWrap.hidden = true;
+    setCarouselNavVisible(prev, next, false);
+    if (track) track.innerHTML = "";
+    grid.hidden = false;
+    grid.innerHTML = errorHtml;
+  }
+}
+
+async function loadHomePropertiesSection() {
+  const grid = document.getElementById("property-grid-home");
+  if (!grid) return;
+
+  try {
+    const { active } = await getPropertiesCatalog();
+    initHomeCarouselSection({
+      grid,
+      sliderWrap: document.getElementById("property-home-slider-wrap"),
+      viewport: document.getElementById("property-home-viewport"),
+      track: document.getElementById("property-home-track"),
+      prev: document.getElementById("property-home-prev"),
+      next: document.getElementById("property-home-next"),
+      items: active,
+      renderItem: (p) => renderPropertyCard(p),
+      cardSelector: ".property-card",
+      emptyHtml: propertiesEmptyHtml("active"),
+      errorHtml: propertiesLoadErrorHtml(),
+      logLabel: "Properties",
+    });
+  } catch (e) {
+    console.error("Properties home load error:", e);
+    grid.innerHTML = propertiesLoadErrorHtml();
+  }
+}
+
+async function loadHomeSoldSection() {
+  const grid = document.getElementById("sold-grid-home");
+  if (!grid) return;
+
+  try {
+    const { sold } = await getPropertiesCatalog();
+    initHomeCarouselSection({
+      grid,
+      sliderWrap: document.getElementById("sold-home-slider-wrap"),
+      viewport: document.getElementById("sold-home-viewport"),
+      track: document.getElementById("sold-home-track"),
+      prev: document.getElementById("sold-home-prev"),
+      next: document.getElementById("sold-home-next"),
+      items: sold,
+      renderItem: (s) => renderPropertyCard(s, { soldView: true }),
+      cardSelector: ".property-card",
+      emptyHtml: propertiesEmptyHtml("sold"),
+      errorHtml: "",
+      logLabel: "Sold properties",
+    });
+  } catch (e) {
+    console.error("Sold properties home load error:", e);
+    grid.innerHTML = "";
+  }
+}
+
+async function loadHomeDevSection() {
+  const grid = document.getElementById("dev-grid-home");
+  if (!grid) return;
+
+  try {
+    const projects = await getProjects();
+    initHomeCarouselSection({
+      grid,
+      sliderWrap: document.getElementById("dev-home-slider-wrap"),
+      viewport: document.getElementById("dev-home-viewport"),
+      track: document.getElementById("dev-home-track"),
+      prev: document.getElementById("dev-home-prev"),
+      next: document.getElementById("dev-home-next"),
+      items: projects,
+      renderItem: (p) => renderDevCard(p),
+      cardSelector: ".dev-card",
+      emptyHtml: projectsEmptyHtml(),
+      errorHtml: `<p role="alert">Projekty se nepodařilo načíst.</p>`,
+      logLabel: "Projects",
+    });
+  } catch (e) {
+    console.error("Projects home load error:", e);
+    grid.innerHTML = `<p role="alert">Projekty se nepodařilo načíst.</p>`;
   }
 }
 
@@ -1335,9 +1525,9 @@ async function boot() {
   initStats();
 
   if (path === "index.html" || path === "") {
-    await loadPropertiesList("#property-grid-home", { limit: 3 });
-    await loadSold("#sold-grid-home");
-    await loadProjects("#dev-grid-home", 3);
+    await loadHomePropertiesSection();
+    await loadHomeSoldSection();
+    await loadHomeDevSection();
     await loadServices("#services-grid-home", 4);
     await loadTestimonials();
     initSocialVideosCarousel();

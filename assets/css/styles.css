@@ -1206,6 +1206,11 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   padding: 1.5rem 1.5rem 1.75rem;
 }
 
+#nabidka .property-card__body,
+#prodano .property-card__body {
+  padding-bottom: 2.5rem;
+}
+
 /* Reference sekce na homepage - stejné pozadí jako zbytek bílých bloků (stín karet dřív vypadal jako šedá deska) */
 section[aria-labelledby="ref-heading"] {
   background: var(--c-white);
@@ -1236,6 +1241,86 @@ section[aria-labelledby="ref-heading"] {
   transition: transform 0.55s var(--ease-out);
   will-change: transform;
   background: transparent;
+}
+
+/* Karusely na domovské stránce – šipky po stranách karet, vertikálně uprostřed */
+.property-home-slider {
+  display: block;
+  position: relative;
+  width: 100%;
+  padding-inline: clamp(2.75rem, 6vw, 3.5rem);
+}
+
+.property-home-slider[hidden] {
+  display: none !important;
+}
+
+.property-home-slider .t-nav-btn[hidden] {
+  display: none !important;
+}
+
+.property-home-slider .testimonial-viewport {
+  width: 100%;
+}
+
+.property-home-slider .t-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 48px;
+  height: 48px;
+  border: 1.5px solid rgba(72, 72, 72, 0.32);
+  background: var(--c-white);
+  color: var(--c-ink);
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.14),
+    0 1px 4px rgba(72, 72, 72, 0.1);
+}
+
+.property-home-slider .t-nav-btn:first-of-type {
+  left: 0;
+}
+
+.property-home-slider .t-nav-btn:last-of-type {
+  right: 0;
+}
+
+.property-home-slider .t-nav-btn:hover:not(:disabled) {
+  border-color: var(--c-accent);
+  background: var(--c-white);
+  color: var(--c-black);
+  box-shadow:
+    0 6px 22px rgba(0, 0, 0, 0.16),
+    0 0 0 2px rgba(244, 193, 5, 0.4);
+}
+
+#property-home-track,
+#sold-home-track,
+#dev-home-track {
+  gap: 1.5rem;
+}
+
+#property-home-track .property-card,
+#sold-home-track .property-card {
+  min-width: 0;
+  width: 100%;
+}
+
+#dev-home-track .dev-card {
+  min-width: 0;
+}
+
+/* Prodané na domů – stejná velikost karet a karusel jako u „Všechny nemovitosti“ */
+#sold-home-slider-wrap.property-home-slider {
+  padding-inline: clamp(2.75rem, 6vw, 3.5rem);
+}
+
+#sold-home-track .property-card__media {
+  aspect-ratio: 4 / 3;
 }
 
 .testimonial-card {

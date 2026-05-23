@@ -192,24 +192,38 @@
               <a href="nemovitosti.html" class="btn btn--outline-dark">Celá nabídka</a>
             </div>
           </div>
+          <div
+            class="testimonial-slider property-home-slider mt-md"
+            id="property-home-slider-wrap"
+            hidden
+            data-reveal
+          >
+            <button
+              type="button"
+              class="t-nav-btn t-nav-btn--edge"
+              id="property-home-prev"
+              aria-label="Předchozí nemovitost"
+            >
+              ←
+            </button>
+            <div class="testimonial-viewport" id="property-home-viewport">
+              <div class="testimonial-track" id="property-home-track"></div>
+            </div>
+            <button
+              type="button"
+              class="t-nav-btn t-nav-btn--edge"
+              id="property-home-next"
+              aria-label="Další nemovitost"
+            >
+              →
+            </button>
+          </div>
           <div class="card-grid mt-md" id="property-grid-home" data-reveal></div>
         </div>
       </section>
 
-      <!-- PRODANÉ -->
-      <section class="section section--tone-mid" aria-labelledby="sold-heading">
-        <div class="container">
-          <div data-reveal>
-            <p class="eyebrow">Důvěra</p>
-            <h2 id="sold-heading">Prodané nemovitosti</h2>
-            <p class="lead" style="margin-bottom: 2rem">Výsledky místo slibů - decentní „Prodáno“ jako potvrzení procesu.</p>
-          </div>
-          <div class="sold-grid" id="sold-grid-home" data-reveal></div>
-        </div>
-      </section>
-
       <!-- DEV PROJEKTY -->
-      <section class="section section--tone-deep" id="projekty" aria-labelledby="dev-heading">
+      <section class="section section--tone-mid" id="projekty" aria-labelledby="dev-heading">
         <div class="container">
           <div data-reveal>
             <p class="eyebrow">Development</p>
@@ -221,7 +235,73 @@
               <a href="developerske-projekty.html" class="btn btn--outline-dark">Všechny projekty</a>
             </div>
           </div>
+          <div
+            class="testimonial-slider property-home-slider mt-md"
+            id="dev-home-slider-wrap"
+            hidden
+            data-reveal
+          >
+            <button
+              type="button"
+              class="t-nav-btn t-nav-btn--edge"
+              id="dev-home-prev"
+              aria-label="Předchozí projekt"
+            >
+              ←
+            </button>
+            <div class="testimonial-viewport" id="dev-home-viewport">
+              <div class="testimonial-track" id="dev-home-track"></div>
+            </div>
+            <button
+              type="button"
+              class="t-nav-btn t-nav-btn--edge"
+              id="dev-home-next"
+              aria-label="Další projekt"
+            >
+              →
+            </button>
+          </div>
           <div class="dev-grid mt-md" id="dev-grid-home" data-reveal style="margin-top: 2.5rem"></div>
+        </div>
+      </section>
+
+      <!-- PRODANÉ -->
+      <section class="section section--tone-deep" id="prodano" aria-labelledby="sold-heading">
+        <div class="container">
+          <div data-reveal>
+            <p class="eyebrow">Důvěra</p>
+            <div style="max-width: 52ch">
+              <h2 id="sold-heading">Prodané nemovitosti</h2>
+              <p class="lead mb-0">Výsledky místo slibů - decentní „Prodáno“ jako potvrzení procesu.</p>
+            </div>
+          </div>
+          <div
+            class="testimonial-slider property-home-slider mt-md"
+            id="sold-home-slider-wrap"
+            hidden
+            data-reveal
+          >
+            <button
+              type="button"
+              class="t-nav-btn t-nav-btn--edge"
+              id="sold-home-prev"
+              aria-label="Předchozí prodaná nemovitost"
+            >
+              ←
+            </button>
+            <div class="testimonial-viewport" id="sold-home-viewport">
+              <div class="testimonial-track" id="sold-home-track"></div>
+            </div>
+            <button
+              type="button"
+              class="t-nav-btn t-nav-btn--edge"
+              id="sold-home-next"
+              aria-label="Další prodaná nemovitost"
+            >
+              →
+            </button>
+          </div>
+          <div class="card-grid mt-md" id="sold-grid-home" data-reveal></div>
         </div>
       </section>
 
