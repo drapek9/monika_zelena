@@ -325,6 +325,10 @@ function formatPropertyPrice(p) {
   return `${num} Kč`;
 }
 
+function getPropertyOfferButtonLabel(p) {
+  return p.type === "rent" || p.priceKind === "pronajem" ? "Pronájem" : "Prodej";
+}
+
 function renderPropertyCard(p, { soldView = false } = {}) {
   const typeAttr = p.type ? ` data-type="${p.type}"` : "";
   const isSold = soldView || p.status === "sold";
@@ -337,9 +341,22 @@ function renderPropertyCard(p, { soldView = false } = {}) {
   } else if (p.status === "reserved") {
     badge = `<span class="sold-badge sold-badge--reserved">Rezervováno</span>`;
   }
-  const externalUrl = !isSold && p.externalUrl ? String(p.externalUrl).trim() : "";
-  const link = externalUrl
-    ? `<a class="property-card__link" href="${externalUrl}" target="_blank" rel="noopener noreferrer" aria-label="Detail nemovitosti: ${p.title}"></a>`
+
+  const detailUrl = !isSold && p.externalUrl ? String(p.externalUrl).trim() : "";
+  const opensNewTab = detailUrl && /^https?:\/\//i.test(detailUrl);
+  const targetAttrs = opensNewTab ? ' target="_blank" rel="noopener noreferrer"' : "";
+
+  let actionHtml = "";
+  if (detailUrl) {
+    const offerLabel = getPropertyOfferButtonLabel(p);
+    actionHtml = `
+          <div class="property-card__actions">
+            <a href="${detailUrl}" class="btn btn--primary btn--sm"${targetAttrs}>${offerLabel}</a>
+          </div>`;
+  }
+
+  const cardLink = detailUrl
+    ? `<a class="property-card__link" href="${detailUrl}"${targetAttrs} aria-label="Detail nemovitosti: ${p.title}"></a>`
     : "";
 
   return `
@@ -349,11 +366,14 @@ function renderPropertyCard(p, { soldView = false } = {}) {
           <img src="${p.image}" alt="" loading="lazy" width="600" height="450" />
         </div>
         <div class="property-card__body">
-          <p class="eyebrow">${p.location}</p>
-          <h3>${p.title}</h3>
-          <p class="property-card__price">${formatPropertyPrice(p)}</p>
+          <div class="property-card__content">
+            <p class="eyebrow">${p.location}</p>
+            <h3>${p.title}</h3>
+            <p class="property-card__price">${formatPropertyPrice(p)}</p>
+          </div>
+          ${actionHtml}
         </div>
-        ${link}
+        ${cardLink}
       </article>`;
 }
 
@@ -936,7 +956,7 @@ async function loadHomeDevSection() {
   }
 }
 
-/* ----- Sociální videa - jeden řádek, horizontální posuv ----- */
+/* ----- Sociální videa - posuv po stránkách (jako janhlavon.cz) ----- */
 function initSocialVideosCarousel() {
   const viewport = document.getElementById("social-videos-viewport");
   const prevBtn = document.getElementById("social-v-prev");
@@ -948,53 +968,151 @@ function initSocialVideosCarousel() {
 
   const getVideos = () => [...row.querySelectorAll("video")];
 
-  function anchorIndex() {
+  /** Umožní dojet na konec tak, že poslední video zůstane vlevo (jako janhlavon.cz). */
+  function syncEndPadding() {
     const videos = getVideos();
-    if (!videos.length) return 0;
-    const sl = viewport.scrollLeft;
-    let idx = 0;
-    for (let i = 0; i < videos.length; i++) {
-      if (videos[i].offsetLeft <= sl + 8) idx = i;
+    if (!videos.length) {
+      row.style.removeProperty("padding-right");
+      return;
     }
-    return idx;
+    const last = videos[videos.length - 1];
+    const pad = Math.max(0, viewport.clientWidth - last.offsetWidth);
+    row.style.paddingRight = `${pad}px`;
   }
 
-  function scrollToIndex(i) {
+  function maxScrollLeft() {
+    return Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+  }
+
+  /** Index posledního videa celého viditelného při daném scrollLeft. */
+  function lastFullyVisibleIndex(scrollLeft) {
     const videos = getVideos();
-    const v = videos[i];
-    if (!v) return;
-    const maxSL = Math.max(0, viewport.scrollWidth - viewport.clientWidth);
-    const left = Math.min(Math.max(0, v.offsetLeft), maxSL);
-    viewport.scrollTo({
-      left,
-      behavior: prefersReducedMotion ? "auto" : "smooth",
-    });
+    const vw = viewport.clientWidth;
+    const eps = 2;
+    let last = -1;
+
+    for (let i = 0; i < videos.length; i++) {
+      const relLeft = videos[i].offsetLeft - scrollLeft;
+      const relRight = relLeft + videos[i].offsetWidth;
+      if (relLeft < -eps) continue;
+      if (relRight <= vw + eps) last = i;
+      else break;
+    }
+
+    return last;
   }
 
-  function updateNav() {
-    const eps = 6;
-    const { scrollLeft, clientWidth, scrollWidth } = viewport;
-    const allFit = scrollWidth <= clientWidth + eps;
-    const atStart = scrollLeft <= eps;
-    const atEnd = scrollLeft + clientWidth >= scrollWidth - eps;
+  /**
+   * Každá stránka = offsetLeft videa zarovnaného vlevo (levé video vždy celé),
+   * na konci maxScrollLeft (poslední video vlevo).
+   */
+  function getPageScrollTargets() {
+    const videos = getVideos();
+    const maxSL = maxScrollLeft();
+    if (!videos.length) return [0];
+    if (maxSL <= 0) return [0];
 
-    if (prevBtn) prevBtn.disabled = allFit || atStart;
-    if (nextBtn) nextBtn.disabled = allFit || atEnd;
+    const targets = [0];
+    let scrollLeft = 0;
+    const eps = 6;
+
+    while (scrollLeft < maxSL - eps) {
+      const last = lastFullyVisibleIndex(scrollLeft);
+
+      if (last < 0) {
+        if (maxSL > scrollLeft + eps && targets[targets.length - 1] !== maxSL) {
+          targets.push(maxSL);
+        }
+        break;
+      }
+
+      const nextIdx = last + 1;
+      if (nextIdx >= videos.length) break;
+
+      if (nextIdx >= videos.length - 1) {
+        if (targets[targets.length - 1] !== maxSL) targets.push(maxSL);
+        break;
+      }
+
+      const nextLeft = videos[nextIdx].offsetLeft;
+      if (nextLeft <= scrollLeft + eps) break;
+
+      targets.push(nextLeft);
+      scrollLeft = nextLeft;
+    }
+
+    if (targets[targets.length - 1] !== maxSL) {
+      targets.push(maxSL);
+    }
+
+    return targets;
+  }
+
+  function anchorPage() {
+    const targets = getPageScrollTargets();
+    const sl = viewport.scrollLeft;
+    let best = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i < targets.length; i++) {
+      const dist = Math.abs(sl - targets[i]);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  function scrollToPage(page) {
+    const targets = getPageScrollTargets();
+    if (!targets.length) return;
+    const left = Math.round(
+      targets[Math.min(targets.length - 1, Math.max(0, page))]
+    );
+    viewport.scrollTo({ left, behavior: "auto" });
+  }
+
+  function isAtStart() {
+    return viewport.scrollLeft <= 6;
+  }
+
+  function isAtEnd() {
+    const eps = 6;
+    const { clientWidth, scrollWidth } = viewport;
+    const targets = getPageScrollTargets();
+    if (scrollWidth <= clientWidth + eps) return true;
+    if (targets.length <= 1) return true;
+    return viewport.scrollLeft >= targets[targets.length - 1] - eps;
   }
 
   function go(delta) {
-    const videos = getVideos();
-    if (!videos.length) return;
-    const i = anchorIndex();
-    const target = Math.min(videos.length - 1, Math.max(0, i + delta));
-    scrollToIndex(target);
+    if (delta < 0 && isAtStart()) return;
+    if (delta > 0 && isAtEnd()) return;
+    const targets = getPageScrollTargets();
+    if (!targets.length) return;
+    const page = anchorPage();
+    scrollToPage(Math.min(targets.length - 1, Math.max(0, page + delta)));
   }
 
   prevBtn?.addEventListener("click", () => go(-1));
   nextBtn?.addEventListener("click", () => go(1));
 
-  viewport.addEventListener("scroll", updateNav, { passive: true });
-  const ro = new ResizeObserver(() => updateNav());
+  function snapToNearestPage() {
+    const targets = getPageScrollTargets();
+    const page = anchorPage();
+    const target = targets[page];
+    if (target == null) return;
+    if (Math.abs(viewport.scrollLeft - target) > 2) {
+      viewport.scrollTo({ left: Math.round(target), behavior: "auto" });
+    }
+  }
+
+  viewport.addEventListener("scrollend", snapToNearestPage);
+
+  const ro = new ResizeObserver(() => {
+    syncEndPadding();
+    scrollToPage(anchorPage());
+  });
   ro.observe(viewport);
 
   viewport.addEventListener("keydown", (e) => {
@@ -1008,9 +1126,12 @@ function initSocialVideosCarousel() {
   });
 
   getVideos().forEach((v) => {
-    v.addEventListener("loadedmetadata", updateNav, { once: true });
+    v.addEventListener("loadedmetadata", () => {
+      syncEndPadding();
+      scrollToPage(anchorPage());
+    });
   });
-  requestAnimationFrame(updateNav);
+  syncEndPadding();
 }
 
 /* ----- Video lightbox ----- */

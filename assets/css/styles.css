@@ -756,15 +756,18 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 .card-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  align-items: stretch;
   gap: 1.5rem;
 }
 
 .property-card {
   position: relative;
+  height: 100%;
 }
 
 .property-card__media {
   position: relative;
+  flex: 0 0 auto;
   aspect-ratio: 4/3;
   overflow: hidden;
 }
@@ -821,6 +824,23 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   cursor: pointer;
 }
 
+.property-card__content {
+  flex: 0 0 auto;
+}
+
+.property-card__actions {
+  margin-top: auto;
+  padding-top: 1.25rem;
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 3;
+}
+
+.property-card__actions .btn {
+  position: relative;
+  z-index: 4;
+}
+
 .property-card__tag {
   position: absolute;
   top: 1rem;
@@ -866,7 +886,14 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 .sold-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  align-items: stretch;
   gap: 1.5rem;
+}
+
+.sold-grid > .property-card {
+  align-self: stretch;
+  height: auto;
+  min-height: 100%;
 }
 
 .property-card__media .sold-badge {
@@ -1206,6 +1233,13 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   padding: 1.5rem 1.5rem 1.75rem;
 }
 
+.property-card__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 #nabidka .property-card__body,
 #prodano .property-card__body {
   padding-bottom: 2.5rem;
@@ -1302,6 +1336,15 @@ section[aria-labelledby="ref-heading"] {
 #sold-home-track,
 #dev-home-track {
   gap: 1.5rem;
+  align-items: stretch;
+}
+
+.card-grid > .property-card,
+#property-home-track > .property-card,
+#sold-home-track > .property-card {
+  align-self: stretch;
+  height: auto;
+  min-height: 100%;
 }
 
 #property-home-track .property-card,
@@ -1415,6 +1458,7 @@ section[aria-labelledby="ref-heading"] {
   width: 100%;
   min-width: 0;
   scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   outline: none;
   scrollbar-width: none;
@@ -1454,6 +1498,8 @@ section[aria-labelledby="ref-heading"] {
   max-width: none;
   display: block;
   flex: 0 0 auto;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
   object-fit: contain;
   object-position: center;
   background-color: var(--c-warm);
