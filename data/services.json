@@ -9,13 +9,13 @@
     "slug": "pronajem",
     "title": "Pronájem nemovitostí",
     "short": "Bezpečný výběr nájemníků, smluvní rámec a stabilní pronájem bez zbytečných starostí.",
-    "icon": "key"
+    "icon": "rent"
   },
   {
     "slug": "odhad",
     "title": "Odhad ceny",
     "short": "Transparentní ocenění na základě dat z lokality, segmentu a aktuální poptávky.",
-    "icon": "chart"
+    "icon": "dollar"
   },
   {
     "slug": "pravo",

@@ -4,6 +4,41 @@
 
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+function getCurrentPagePath() {
+  return (window.location.pathname.split("/").pop() || "index.html").split("?")[0];
+}
+
+/** Odkaz vede na aktuální stránku (bez reloadu). */
+function hrefTargetsCurrentPage(href) {
+  if (!href) return false;
+  const raw = href.trim();
+  if (!raw || raw.startsWith("#") || /^[a-z][a-z0-9+.-]*:/i.test(raw)) return false;
+  const linkPath = raw.split("?")[0].split("#")[0].trim() || "index.html";
+  const pagePath = getCurrentPagePath();
+  if (linkPath === pagePath) return true;
+  const onHome = pagePath === "" || pagePath === "index.html";
+  const linkHome =
+    linkPath === "" ||
+    linkPath === "index.html" ||
+    linkPath === "./index.html" ||
+    linkPath === "/" ||
+    /(^|\/)index\.html$/i.test(linkPath);
+  return onHome && linkHome;
+}
+
+function scrollPageToTop() {
+  const toggle = document.getElementById("nav-toggle");
+  const nav = document.getElementById("site-nav");
+  if (toggle && nav) {
+    nav.classList.remove("is-open");
+    toggle.setAttribute("aria-expanded", "false");
+  }
+  window.scrollTo({ top: 0, behavior: prefersReducedMotion ? "auto" : "smooth" });
+  if (window.location.hash && window.history.replaceState) {
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  }
+}
+
 /* ----- Loader ----- */
 function initLoader() {
   const el = document.getElementById("page-loader");
@@ -40,34 +75,27 @@ function initHeader() {
     });
   }
 
-  const path = (window.location.pathname.split("/").pop() || "index.html").split("?")[0];
+  const path = getCurrentPagePath();
   document.querySelectorAll(".nav-list a").forEach((a) => {
     const href = a.getAttribute("href");
     if (href === path || (path === "" && href === "index.html")) {
       a.classList.add("is-active");
     }
+    a.addEventListener("click", (e) => {
+      const linkHref = (a.getAttribute("href") || "").trim();
+      if (!hrefTargetsCurrentPage(linkHref)) return;
+      e.preventDefault();
+      scrollPageToTop();
+    });
   });
 
   const logo = header?.querySelector(".logo");
   if (logo) {
     logo.addEventListener("click", (e) => {
       const href = (logo.getAttribute("href") || "").trim();
-      const goesHome =
-        href === "index.html" ||
-        href === "/" ||
-        href === "./index.html" ||
-        /(^|\/)index\.html$/i.test(href);
-      const onHome = path === "" || path === "index.html";
-      if (!onHome || !goesHome) return;
+      if (!hrefTargetsCurrentPage(href)) return;
       e.preventDefault();
-      if (toggle && nav) {
-        nav.classList.remove("is-open");
-        toggle.setAttribute("aria-expanded", "false");
-      }
-      window.scrollTo({ top: 0, behavior: prefersReducedMotion ? "auto" : "smooth" });
-      if (window.location.hash && window.history.replaceState) {
-        window.history.replaceState(null, "", window.location.pathname + window.location.search);
-      }
+      scrollPageToTop();
     });
   }
 }
@@ -543,15 +571,17 @@ async function loadProjects(selector, limit) {
 
 /* ----- Services icons (inline SVG) ----- */
 const icons = {
-  home: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 10.5L12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"/></svg>`,
+  home: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5L12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"/></svg>`,
+  rent: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l8 7v9H4V11l8-7z"/></svg>`,
   key: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="8" cy="15" r="4"/><path d="M15 8l2 2m3-5l-5 5"/></svg>`,
   chart: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19h16"/><path d="M7 16V9m5 7V5m5 11v-4"/></svg>`,
+  dollar: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
   bank: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 10h16v10H4V10zm2-4h12v4H6V6z"/><path d="M12 14v4"/></svg>`,
   sofa: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 12V9a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3"/><path d="M3 14v3h4v2h10v-2h4v-3a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"/></svg>`,
   film: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14"/></svg>`,
   drone: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 8l4-4m8 0l4 4m0 8l-4 4m-8 0l-4-4"/><circle cx="12" cy="12" r="3"/></svg>`,
-  scale: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v18M5 7h14M8 12h8"/></svg>`,
-  building: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2m4 0h2M9 11h2m4 0h2M9 15h4"/></svg>`
+  scale: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2"/></svg>`,
+  building: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 8h2M13 8h2M9 12h2M13 12h2M10.5 16h3"/></svg>`
 };
 
 async function loadServices(selector, limit) {
@@ -595,6 +625,7 @@ function initInfiniteCarousel({
   cardSelector,
   minItemsToLoop = null,
   autoplayMs = 0,
+  getVisibleCount = null,
 }) {
   if (!track || !viewport || !items?.length) return;
 
@@ -603,6 +634,7 @@ function initInfiniteCarousel({
   let autoplayTimer = null;
 
   function visibleCount() {
+    if (typeof getVisibleCount === "function") return getVisibleCount();
     const w = window.innerWidth;
     if (w < 640) return 1;
     if (w < 960) return 2;
@@ -767,6 +799,38 @@ function scheduleCarouselRelayoutOnReveal(sliderWrap, relayout) {
     { threshold: 0.05 }
   );
   io.observe(sliderWrap);
+}
+
+function initPresentationVideosCarousel() {
+  const sliderWrap = document.getElementById("presentation-videos-slider");
+  const viewport = document.getElementById("presentation-videos-viewport");
+  const track = document.getElementById("presentation-videos-track");
+  const prev = document.getElementById("presentation-v-prev");
+  const next = document.getElementById("presentation-v-next");
+  if (!viewport || !track) return;
+
+  const items = [...track.querySelectorAll(".presentation-video")];
+  if (items.length < 2) return;
+
+  track.innerHTML = buildInfiniteTrackHtml(items, (el) => el.outerHTML, true);
+  void viewport.offsetWidth;
+
+  const carousel = initInfiniteCarousel({
+    viewport,
+    track,
+    prev,
+    next,
+    items,
+    cardSelector: ".presentation-video",
+    minItemsToLoop: 2,
+    getVisibleCount: () => (window.innerWidth < 540 ? 1 : 2),
+  });
+
+  if (carousel && sliderWrap) {
+    const relayout = () => carousel.relayout();
+    requestAnimationFrame(() => requestAnimationFrame(relayout));
+    scheduleCarouselRelayoutOnReveal(sliderWrap, relayout);
+  }
 }
 
 function buildInfiniteTrackHtml(items, renderItem, duplicate) {
@@ -1651,6 +1715,7 @@ async function boot() {
     await loadHomeDevSection();
     await loadServices("#services-grid-home", 4);
     await loadTestimonials();
+    initPresentationVideosCarousel();
     initSocialVideosCarousel();
     if (window.location.hash) scrollToHashTarget();
   }

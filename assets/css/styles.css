@@ -8,11 +8,12 @@
   --c-muted: #484848;
   --c-soft: #868686;
   --c-white: #ffffff;
-  --c-warm: #f8f8f8;
-  --c-surface-light: #ffffff;
-  --c-surface-mid: #f8f8f8;
-  --c-surface-deep: #e6e6e6;
-  --c-section-line: rgba(72, 72, 72, 0.14);
+  --c-canvas: #f3f2ef;
+  --c-warm: #ebeae6;
+  --c-surface-light: #faf9f7;
+  --c-surface-mid: #f0efec;
+  --c-surface-deep: #ebe9e4;
+  --c-section-line: rgba(72, 72, 72, 0.11);
   --c-accent: #f4c105;
   --font-display: "Libre Bodoni", "Bodoni MT", "Didot", Georgia, serif;
   --font-body: "Montserrat", system-ui, sans-serif;
@@ -24,12 +25,6 @@
   --shadow-soft: 0 24px 80px rgba(0, 0, 0, 0.12);
   --shadow-card: 0 16px 48px rgba(0, 0, 0, 0.08);
   --header-h: 76px;
-}
-
-@supports (background: color-mix(in srgb, #f8f8f8, #868686)) {
-  :root {
-    --c-surface-deep: color-mix(in srgb, #868686 22%, #f8f8f8 78%);
-  }
 }
 
 *,
@@ -62,7 +57,12 @@ body {
   font-size: 1rem;
   line-height: 1.65;
   color: var(--c-text);
-  background: var(--c-white);
+  background-color: var(--c-canvas);
+  background-image: radial-gradient(
+    ellipse 120% 70% at 50% -15%,
+    rgba(244, 193, 5, 0.045),
+    transparent 55%
+  );
   -webkit-font-smoothing: antialiased;
 }
 
@@ -121,25 +121,51 @@ button {
   color: var(--c-white);
 }
 
+.section--white {
+  background-color: var(--c-white);
+}
+
 .section--warm,
 .section--tone-light {
-  background: var(--c-surface-light);
+  background-color: var(--c-surface-light);
+  background-image:
+    radial-gradient(ellipse 90% 58% at 100% 0%, rgba(244, 193, 5, 0.05), transparent 58%),
+    radial-gradient(ellipse 55% 42% at 0% 100%, rgba(23, 23, 23, 0.028), transparent 52%),
+    linear-gradient(180deg, #fcfbfa 0%, var(--c-surface-light) 45%, #f2f1ed 100%);
 }
 
 .section--tone-mid {
-  background: var(--c-surface-mid);
+  background-color: var(--c-surface-mid);
+  background-image:
+    radial-gradient(ellipse 78% 52% at 0% 45%, rgba(244, 193, 5, 0.04), transparent 56%),
+    radial-gradient(ellipse 65% 48% at 100% 100%, rgba(23, 23, 23, 0.03), transparent 52%),
+    linear-gradient(180deg, #f3f2ef 0%, var(--c-surface-mid) 50%, #e8e7e3 100%);
 }
 
+/* Světlejší šedá – bez tmavého color-mixu (pouze kde je potřeba mimo úvod) */
 .section--tone-deep {
-  background: var(--c-surface-deep);
+  background-color: #ebe9e4;
+  background-image:
+    radial-gradient(ellipse 72% 50% at 50% 0%, rgba(244, 193, 5, 0.04), transparent 60%),
+    linear-gradient(180deg, #f2f1ed 0%, #ebe9e4 55%, #e6e4df 100%);
 }
 
-/* Domů: oddělené pásy – sekce nesplývají s pozadím ani mezi sebou */
-.page-home #main > .section[class*="section--tone"] {
+/* Domů: střídání bílé a světle šedé (bez tmavých tónů) */
+.page-home #main > .section.section--white,
+.page-home #main > .section.section--tone-mid {
+  background-image: none;
   border-top: 1px solid var(--c-section-line);
 }
 
-.page-home #main > .section[class*="section--tone"]:first-of-type {
+.page-home #main > .section.section--white {
+  background-color: var(--c-white);
+}
+
+.page-home #main > .section.section--tone-mid {
+  background-color: #eeedea;
+}
+
+.page-home #main > .hero + .section {
   border-top: none;
 }
 
@@ -470,9 +496,9 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 /* Světlý hero - neutrální podklad, jen náznak akcentu (zlatá hlavně na CTA) */
 .hero--personal .hero__bg {
   background:
-    radial-gradient(ellipse 92% 62% at 88% 10%, rgba(244, 193, 5, 0.09), transparent 54%),
-    radial-gradient(ellipse 52% 44% at 14% 88%, rgba(23, 23, 23, 0.035), transparent 50%),
-    linear-gradient(168deg, #ffffff 0%, #ffffff 55%, var(--c-surface-mid) 100%);
+    radial-gradient(ellipse 92% 62% at 88% 10%, rgba(244, 193, 5, 0.1), transparent 54%),
+    radial-gradient(ellipse 52% 44% at 14% 88%, rgba(23, 23, 23, 0.04), transparent 50%),
+    linear-gradient(168deg, #fcfbfa 0%, #f6f5f2 52%, var(--c-surface-mid) 100%);
 }
 
 .hero__inner {
@@ -878,7 +904,8 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 }
 
 .section--tone-mid .properties-empty,
-.section--tone-deep .properties-empty {
+.section--tone-deep .properties-empty,
+.section--white .properties-empty {
   color: var(--c-ink);
   opacity: 0.72;
 }
@@ -935,19 +962,57 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   max-width: 48ch;
 }
 
-.presentation-videos {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(1rem, 2.5vw, 1.75rem);
-  align-items: stretch;
+.presentation-videos-slider {
+  display: block;
+  position: relative;
   width: 100%;
-  max-width: none;
+  padding-inline: clamp(2.75rem, 6vw, 3.5rem);
 }
 
-@media (max-width: 540px) {
-  .presentation-videos {
-    grid-template-columns: 1fr;
-  }
+/* Šipky karuselu – stejné bílé tlačítka jako u „Všechny nemovitosti“ */
+#prezentace .presentation-videos-slider .t-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 48px;
+  height: 48px;
+  border: 1.5px solid rgba(72, 72, 72, 0.32);
+  background: var(--c-white);
+  color: var(--c-ink);
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.14),
+    0 1px 4px rgba(72, 72, 72, 0.1);
+}
+
+#prezentace .presentation-videos-slider .t-nav-btn:first-of-type {
+  left: 0;
+}
+
+#prezentace .presentation-videos-slider .t-nav-btn:last-of-type {
+  right: 0;
+}
+
+#prezentace .presentation-videos-slider .t-nav-btn:hover:not(:disabled) {
+  border-color: var(--c-accent);
+  background: var(--c-white);
+  color: var(--c-black);
+  box-shadow:
+    0 6px 22px rgba(0, 0, 0, 0.16),
+    0 0 0 2px rgba(244, 193, 5, 0.4);
+}
+
+#prezentace .presentation-videos-slider .testimonial-viewport,
+#prezentace .presentation-videos-slider .testimonial-track {
+  padding: 0;
+  background: transparent;
+}
+
+#presentation-videos-track {
+  gap: clamp(1rem, 2.5vw, 1.75rem);
 }
 
 .presentation-video {
@@ -955,15 +1020,21 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   border-radius: 12px;
   overflow: hidden;
   aspect-ratio: 16 / 9;
-  background: var(--c-black);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
+}
+
+#prezentace .presentation-video {
+  background: #0a0a0a;
+  border: none;
+  box-shadow: none;
 }
 
 .presentation-video--placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+#prezentace .presentation-video--placeholder {
   background: #0a0a0a;
 }
 
@@ -1245,11 +1316,6 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   padding-bottom: 2.5rem;
 }
 
-/* Reference sekce na homepage - stejné pozadí jako zbytek bílých bloků (stín karet dřív vypadal jako šedá deska) */
-section[aria-labelledby="ref-heading"] {
-  background: var(--c-white);
-}
-
 /* Testimonials - žádný společný „panel“ za kartami, jen samotné .testimonial-card */
 .testimonial-slider {
   display: grid;
@@ -1336,6 +1402,10 @@ section[aria-labelledby="ref-heading"] {
 #sold-home-track,
 #dev-home-track {
   gap: 1.5rem;
+  align-items: stretch;
+}
+
+#presentation-videos-track {
   align-items: stretch;
 }
 
@@ -1432,6 +1502,8 @@ section[aria-labelledby="ref-heading"] {
 /* Sociální sekce - vlevo jako .container, vpravo až k okraji okna; bez viditelného scrollbaru */
 .social-videos-strip {
   margin-top: 2rem;
+  padding-top: clamp(1rem, 2.5vw, 1.5rem);
+  padding-bottom: clamp(0.5rem, 2vw, 1rem);
   padding-left: calc(max(0px, (100vw - 1180px) / 2) + clamp(1.25rem, 5vw, 2.5rem));
   padding-right: 0;
   box-sizing: border-box;
@@ -1449,6 +1521,30 @@ section[aria-labelledby="ref-heading"] {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+/* Šipky – stejné bílé tlačítka jako u „Všechny nemovitosti“ */
+.social-videos-slider__nav .t-nav-btn {
+  width: 48px;
+  height: 48px;
+  border: 1.5px solid rgba(72, 72, 72, 0.32);
+  background: var(--c-white);
+  color: var(--c-ink);
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.14),
+    0 1px 4px rgba(72, 72, 72, 0.1);
+}
+
+.social-videos-slider__nav .t-nav-btn:hover:not(:disabled) {
+  border-color: var(--c-accent);
+  background: var(--c-white);
+  color: var(--c-black);
+  box-shadow:
+    0 6px 22px rgba(0, 0, 0, 0.16),
+    0 0 0 2px rgba(244, 193, 5, 0.4);
 }
 
 .social-videos-viewport {
@@ -1502,7 +1598,8 @@ section[aria-labelledby="ref-heading"] {
   scroll-snap-stop: always;
   object-fit: contain;
   object-position: center;
-  background-color: var(--c-warm);
+  background-color: #e5e4e0;
+  box-shadow: 0 12px 40px rgba(23, 23, 23, 0.06);
 }
 
 /* Social masonry */

@@ -85,7 +85,7 @@
       </section>
 
       <!-- SLUŽBY -->
-      <section class="section section--tone-light" id="sluzby" aria-labelledby="services-heading">
+      <section class="section section--white" id="sluzby" aria-labelledby="services-heading">
         <div class="container">
           <div data-reveal class="text-center" style="max-width: 720px; margin-inline: auto">
             <p class="eyebrow">Služby</p>
@@ -95,7 +95,7 @@
             </p>
           </div>
           <div class="services-grid mt-md" id="services-grid-home" data-reveal style="margin-top: 2.5rem"></div>
-          <p class="text-center mt-md"><a href="sluzby.html" class="btn btn--outline-dark">Přehled všech služeb</a></p>
+          <p class="text-center" style="margin-top: 3rem"><a href="sluzby.html" class="btn btn--outline-dark">Přehled všech služeb</a></p>
         </div>
       </section>
 
@@ -131,28 +131,53 @@
       </section>
 
       <!-- PREZENTACE -->
-      <section class="section section--tone-deep" id="prezentace" aria-labelledby="pres-heading">
+      <section class="section section--white" id="prezentace" aria-labelledby="pres-heading">
         <div class="container presentation-layout">
           <div class="presentation-layout__intro" data-reveal>
             <p class="eyebrow">Prezentace</p>
             <h2 id="pres-heading">Profesionální prezentace, která prodává</h2>
             <p class="lead">Neprodávám jen prostor. Prodávám pocit domova.</p>
           </div>
-          <div class="presentation-videos" data-reveal aria-label="Místo pro ukázková videa">
-            <div
-              class="presentation-video presentation-video--placeholder"
-              role="img"
-              aria-label="Místo pro ukázkové video (formát jako YouTube)"
-            >
-              <span class="presentation-video__ph-visual" aria-hidden="true"></span>
+          <div
+            class="presentation-videos-slider property-home-slider"
+            id="presentation-videos-slider"
+            data-reveal
+            aria-label="Ukázková videa"
+          >
+            <button type="button" class="t-nav-btn t-nav-btn--edge" id="presentation-v-prev" aria-label="Předchozí video">←</button>
+            <div class="testimonial-viewport" id="presentation-videos-viewport">
+              <div class="testimonial-track" id="presentation-videos-track">
+                <div
+                  class="presentation-video presentation-video--placeholder"
+                  role="img"
+                  aria-label="Místo pro ukázkové video 1 (formát jako YouTube)"
+                >
+                  <span class="presentation-video__ph-visual" aria-hidden="true"></span>
+                </div>
+                <div
+                  class="presentation-video presentation-video--placeholder"
+                  role="img"
+                  aria-label="Místo pro ukázkové video 2 (formát jako YouTube)"
+                >
+                  <span class="presentation-video__ph-visual" aria-hidden="true"></span>
+                </div>
+                <div
+                  class="presentation-video presentation-video--placeholder"
+                  role="img"
+                  aria-label="Místo pro ukázkové video 3 (formát jako YouTube)"
+                >
+                  <span class="presentation-video__ph-visual" aria-hidden="true"></span>
+                </div>
+                <div
+                  class="presentation-video presentation-video--placeholder"
+                  role="img"
+                  aria-label="Místo pro ukázkové video 4 (formát jako YouTube)"
+                >
+                  <span class="presentation-video__ph-visual" aria-hidden="true"></span>
+                </div>
+              </div>
             </div>
-            <div
-              class="presentation-video presentation-video--placeholder"
-              role="img"
-              aria-label="Místo pro druhé ukázkové video (formát jako YouTube)"
-            >
-              <span class="presentation-video__ph-visual" aria-hidden="true"></span>
-            </div>
+            <button type="button" class="t-nav-btn t-nav-btn--edge" id="presentation-v-next" aria-label="Další video">→</button>
           </div>
           <div class="presentation-services" data-reveal>
             <div class="feature-mini">
@@ -180,7 +205,7 @@
       </section>
 
       <!-- NABÍDKA -->
-      <section class="section section--tone-light" id="nabidka" aria-labelledby="list-heading">
+      <section class="section section--tone-mid" id="nabidka" aria-labelledby="list-heading">
         <div class="container">
           <div data-reveal>
             <p class="eyebrow">Aktuálně</p>
@@ -223,7 +248,7 @@
       </section>
 
       <!-- DEV PROJEKTY -->
-      <section class="section section--tone-mid" id="projekty" aria-labelledby="dev-heading">
+      <section class="section section--white" id="projekty" aria-labelledby="dev-heading">
         <div class="container">
           <div data-reveal>
             <p class="eyebrow">Development</p>
@@ -266,7 +291,7 @@
       </section>
 
       <!-- PRODANÉ -->
-      <section class="section section--tone-deep" id="prodano" aria-labelledby="sold-heading">
+      <section class="section section--tone-mid" id="prodano" aria-labelledby="sold-heading">
         <div class="container">
           <div data-reveal>
             <p class="eyebrow">Důvěra</p>
@@ -306,7 +331,7 @@
       </section>
 
       <!-- REFERENCE -->
-      <section class="section section--tone-light" aria-labelledby="ref-heading">
+      <section class="section section--white" aria-labelledby="ref-heading">
         <div class="container">
           <div data-reveal style="max-width: 520px">
             <p class="eyebrow">Reference</p>
@@ -360,7 +385,7 @@
       </section>
 
       <!-- LEAD -->
-      <section class="section section--tone-deep" id="lead" aria-labelledby="lead-heading">
+      <section class="section section--white" id="lead" aria-labelledby="lead-heading">
         <div class="container">
           <div data-reveal style="max-width: 560px">
             <p class="eyebrow">Začněme</p>
