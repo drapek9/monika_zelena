@@ -764,14 +764,17 @@ function initInfiniteCarousel({
     startTimer();
   }
 
-  prev?.addEventListener("click", () => {
+  const onPrevClick = () => {
     go(-1);
     restartAutoplayAfterManualNav();
-  });
-  next?.addEventListener("click", () => {
+  };
+  const onNextClick = () => {
     go(1);
     restartAutoplayAfterManualNav();
-  });
+  };
+
+  prev?.addEventListener("click", onPrevClick);
+  next?.addEventListener("click", onNextClick);
 
   const ro = new ResizeObserver(() => layout({ instant: true }));
   ro.observe(viewport);
@@ -780,7 +783,18 @@ function initInfiniteCarousel({
   track.addEventListener("mouseenter", stopTimer);
   track.addEventListener("mouseleave", startTimer);
 
-  return { relayout: () => layout({ instant: true }) };
+  return {
+    relayout: () => layout({ instant: true }),
+    destroy: () => {
+      stopTimer();
+      ro.disconnect();
+      track.removeEventListener("transitionend", onTrackTransitionEnd);
+      track.removeEventListener("mouseenter", stopTimer);
+      track.removeEventListener("mouseleave", startTimer);
+      prev?.removeEventListener("click", onPrevClick);
+      next?.removeEventListener("click", onNextClick);
+    },
+  };
 }
 
 function scheduleCarouselRelayoutOnReveal(sliderWrap, relayout) {
@@ -871,6 +885,22 @@ async function loadTestimonials(options = {}) {
   }
 }
 
+const HOME_CAROUSEL_MOBILE_BP = 640;
+
+function isHomeCarouselMobile() {
+  return window.innerWidth < HOME_CAROUSEL_MOBILE_BP;
+}
+
+/** Mobil: karusel při 2+ položkách; desktop: při 4+ (jako dřív). */
+function shouldUseHomeCarousel(itemCount) {
+  if (itemCount <= 0) return false;
+  return isHomeCarouselMobile() ? itemCount > 1 : itemCount > 3;
+}
+
+function homeCarouselMinItemsToLoop() {
+  return isHomeCarouselMobile() ? 1 : 3;
+}
+
 function initHomeCarouselSection({
   grid,
   sliderWrap,
@@ -887,59 +917,119 @@ function initHomeCarouselSection({
 }) {
   if (!grid) return;
 
-  try {
-    if (!items.length) {
-      if (sliderWrap) sliderWrap.hidden = true;
-      setCarouselNavVisible(prev, next, false);
-      if (track) track.innerHTML = "";
-      grid.hidden = false;
-      grid.innerHTML = emptyHtml;
-      return;
-    }
+  let activeCarousel = null;
+  let layoutMode = null;
 
-    if (items.length <= 3) {
-      if (sliderWrap) sliderWrap.hidden = true;
-      setCarouselNavVisible(prev, next, false);
-      if (track) track.innerHTML = "";
-      grid.hidden = false;
-      grid.innerHTML = items.map((item) => renderItem(item)).join("");
-      return;
-    }
+  function destroyActiveCarousel() {
+    activeCarousel?.destroy?.();
+    activeCarousel = null;
+  }
 
-    if (sliderWrap && track && viewport) {
-      sliderWrap.hidden = false;
-      setCarouselNavVisible(prev, next, true);
-      grid.hidden = true;
-      track.innerHTML = buildInfiniteTrackHtml(items, renderItem, true);
-      void viewport.offsetWidth;
-      const carousel = initInfiniteCarousel({
-        viewport,
-        track,
-        prev,
-        next,
-        items,
-        cardSelector,
-        minItemsToLoop: 3,
-        autoplayMs: 0,
-      });
-      if (carousel) {
-        const relayout = () => carousel.relayout();
-        requestAnimationFrame(() => requestAnimationFrame(relayout));
-        scheduleCarouselRelayoutOnReveal(sliderWrap, relayout);
-      }
-      return;
-    }
+  function resetTrack() {
+    if (!track) return;
+    track.innerHTML = "";
+    track.style.removeProperty("transform");
+    track.style.removeProperty("transition");
+  }
 
-    grid.hidden = false;
-    grid.innerHTML = items.map((item) => renderItem(item)).join("");
-  } catch (e) {
-    console.error(`${logLabel} home load error:`, e);
+  function showGrid(html) {
+    destroyActiveCarousel();
     if (sliderWrap) sliderWrap.hidden = true;
     setCarouselNavVisible(prev, next, false);
-    if (track) track.innerHTML = "";
+    resetTrack();
     grid.hidden = false;
-    grid.innerHTML = errorHtml;
+    grid.innerHTML = html;
+    layoutMode = "grid";
   }
+
+  function showCarousel() {
+    if (!sliderWrap || !track || !viewport) {
+      showGrid(items.map((item) => renderItem(item)).join(""));
+      return;
+    }
+
+    destroyActiveCarousel();
+    sliderWrap.hidden = false;
+    setCarouselNavVisible(prev, next, true);
+    grid.hidden = true;
+    track.innerHTML = buildInfiniteTrackHtml(items, renderItem, true);
+    track.style.removeProperty("transform");
+    void viewport.offsetWidth;
+
+    activeCarousel = initInfiniteCarousel({
+      viewport,
+      track,
+      prev,
+      next,
+      items,
+      cardSelector,
+      minItemsToLoop: homeCarouselMinItemsToLoop(),
+      autoplayMs: 0,
+    });
+
+    if (activeCarousel) {
+      const relayout = () => activeCarousel.relayout();
+      requestAnimationFrame(() => requestAnimationFrame(relayout));
+      scheduleCarouselRelayoutOnReveal(sliderWrap, relayout);
+    }
+    layoutMode = "carousel";
+  }
+
+  function render() {
+    try {
+      if (!items.length) {
+        destroyActiveCarousel();
+        if (sliderWrap) sliderWrap.hidden = true;
+        setCarouselNavVisible(prev, next, false);
+        resetTrack();
+        grid.hidden = false;
+        grid.innerHTML = emptyHtml;
+        layoutMode = "empty";
+        return;
+      }
+
+      if (shouldUseHomeCarousel(items.length)) {
+        if (layoutMode === "carousel" && activeCarousel) {
+          activeCarousel.relayout();
+          return;
+        }
+        showCarousel();
+        return;
+      }
+
+      if (layoutMode === "grid") return;
+      showGrid(items.map((item) => renderItem(item)).join(""));
+    } catch (e) {
+      console.error(`${logLabel} home load error:`, e);
+      destroyActiveCarousel();
+      if (sliderWrap) sliderWrap.hidden = true;
+      setCarouselNavVisible(prev, next, false);
+      resetTrack();
+      grid.hidden = false;
+      grid.innerHTML = errorHtml;
+      layoutMode = "error";
+    }
+  }
+
+  render();
+
+  let resizeTimer;
+  window.addEventListener(
+    "resize",
+    () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        const wantCarousel = shouldUseHomeCarousel(items.length);
+        const haveCarousel = layoutMode === "carousel";
+        if (wantCarousel === haveCarousel) {
+          if (haveCarousel && activeCarousel) activeCarousel.relayout();
+          return;
+        }
+        render();
+      }, 120);
+    },
+    { passive: true }
+  );
 }
 
 async function loadHomePropertiesSection() {
