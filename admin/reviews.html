@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Recenze | Admin</title>
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body class="admin-body">
+    <div class="admin-wrap">
+      <header class="admin-header">
+        <div>
+          <h1>Správa recenzí</h1>
+          <p class="admin-user" id="user-email"></p>
+        </div>
+        <button type="button" class="admin-btn admin-btn--ghost" id="logout-btn">
+          Odhlásit se
+        </button>
+      </header>
+
+      <nav class="admin-nav" aria-label="Sekce administrace">
+        <a href="dashboard.html" class="admin-btn admin-btn--ghost admin-btn--sm">Nemovitosti</a>
+        <a href="projects.html" class="admin-btn admin-btn--ghost admin-btn--sm">Projekty</a>
+        <a href="reviews.html" class="admin-btn admin-btn--primary admin-btn--sm is-active">Recenze</a>
+      </nav>
+
+      <section class="admin-section admin-card" id="review-form-section" aria-labelledby="form-heading">
+        <h2 id="form-heading">Přidat recenzi</h2>
+        <p id="form-editing-hint" class="admin-hint" hidden></p>
+        <div id="form-success" class="admin-alert admin-alert--success" hidden role="status"></div>
+        <div id="form-error" class="admin-alert admin-alert--error" hidden role="alert"></div>
+
+        <form id="review-form" class="admin-form">
+          <div class="admin-form-grid">
+            <div class="admin-field admin-field--wide">
+              <label for="text">Text recenze *</label>
+              <textarea id="text" name="text" required maxlength="1000" rows="5"></textarea>
+            </div>
+            <div class="admin-field">
+              <label for="author">Kdo napsal *</label>
+              <input type="text" id="author" name="author" required maxlength="200" />
+            </div>
+          </div>
+          <div class="admin-form-actions">
+            <button type="submit" class="admin-btn admin-btn--primary" id="form-submit">Uložit recenzi</button>
+            <button type="button" class="admin-btn admin-btn--ghost" id="form-cancel" hidden>Zrušit úpravu</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="admin-section admin-card" aria-labelledby="list-heading">
+        <h2 id="list-heading">Seznam recenzí</h2>
+
+        <div class="admin-toolbar">
+          <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" id="refresh-btn">Obnovit</button>
+        </div>
+
+        <div id="list-error" class="admin-alert admin-alert--error" hidden role="alert"></div>
+        <div id="list-loading" class="admin-loading">Načítám…</div>
+        <div id="list-empty" class="admin-empty" hidden>Žádné recenze.</div>
+
+        <div class="admin-table-wrap" id="table-wrap" hidden>
+          <table class="admin-table" id="reviews-table">
+            <thead>
+              <tr>
+                <th>Text</th>
+                <th>Kdo napsal</th>
+                <th>Akce</th>
+              </tr>
+            </thead>
+            <tbody id="reviews-tbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <p class="admin-credit">
+        Admin vytvořil
+        <a href="https://simondrapal.cz/" target="_blank" rel="noopener noreferrer">Šimon Drápal</a>
+      </p>
+    </div>
+
+    <script type="module" src="js/reviews.js"></script>
+  </body>
+</html>

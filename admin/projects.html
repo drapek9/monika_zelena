@@ -22,6 +22,7 @@
       <nav class="admin-nav" aria-label="Sekce administrace">
         <a href="dashboard.html" class="admin-btn admin-btn--ghost admin-btn--sm">Nemovitosti</a>
         <a href="projects.html" class="admin-btn admin-btn--primary admin-btn--sm is-active">Projekty</a>
+        <a href="reviews.html" class="admin-btn admin-btn--ghost admin-btn--sm">Recenze</a>
       </nav>
 
       <section class="admin-section admin-card" id="project-form-section" aria-labelledby="form-heading">
@@ -40,9 +41,25 @@
               <label for="location">Lokalita *</label>
               <input type="text" id="location" name="location" required maxlength="300" />
             </div>
+            <div class="admin-field">
+              <label for="status">Stav *</label>
+              <select id="status" name="status" required>
+                <option value="active">Aktuální</option>
+                <option value="realized">Realizovaný</option>
+              </select>
+            </div>
             <div class="admin-field admin-field--wide">
               <label for="description">Popis *</label>
-              <textarea id="description" name="description" required maxlength="3000" rows="4"></textarea>
+              <textarea
+                id="description"
+                name="description"
+                required
+                maxlength="200"
+                rows="4"
+              ></textarea>
+              <p class="admin-hint" id="description-length-hint" aria-live="polite">
+                Max. 200 znaků · <span id="description-length-count">0</span> / 200
+              </p>
             </div>
             <div class="admin-field admin-field--wide">
               <label for="link">Odkaz na projekt *</label>
@@ -112,6 +129,7 @@
               <tr>
                 <th>Název</th>
                 <th>Lokalita</th>
+                <th>Stav</th>
                 <th>Odkaz</th>
                 <th>Akce</th>
               </tr>

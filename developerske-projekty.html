@@ -29,16 +29,15 @@
         </div>
       </section>
 
-      <section class="section section--warm" aria-labelledby="dev-page-heading">
+      <section class="section section--warm">
         <div class="container">
-          <div data-reveal>
-            <p class="eyebrow">Aktuálně</p>
-            <h2 id="dev-page-heading">Projekty, na kterých spolupracuji</h2>
-            <p class="lead mb-0">
-              Ukázka výběru – u každého projektu najdete odkaz na web s aktuální nabídkou jednotek a podrobnostmi.
-            </p>
+          <div class="toolbar" data-reveal>
+            <div class="filters" role="group" aria-label="Zobrazit projekty">
+              <button type="button" class="filter-btn is-active" data-project-view="aktualni">Aktuální</button>
+              <button type="button" class="filter-btn" data-project-view="realizovane">Realizované</button>
+            </div>
           </div>
-          <div class="dev-grid mt-md" id="dev-grid-full" data-reveal style="margin-top: 2.5rem"></div>
+          <div class="dev-grid" id="dev-grid-full" data-reveal></div>
         </div>
       </section>
 

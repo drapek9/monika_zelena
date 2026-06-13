@@ -38,6 +38,11 @@ const imagePanelFile = document.getElementById("image-panel-file");
 const imageUrlInput = document.getElementById("image-url");
 const imageFileInput = document.getElementById("image-file");
 const imagePreview = document.getElementById("image-preview");
+const descriptionInput = document.getElementById("description");
+const descriptionLengthCountEl = document.getElementById("description-length-count");
+const descriptionLengthHintEl = document.getElementById("description-length-hint");
+
+const PROJECT_DESCRIPTION_MAX_LENGTH = 200;
 
 let allProjects = [];
 let imageMode = "url";
@@ -131,6 +136,42 @@ async function resolveImageUrl() {
   return url;
 }
 
+function updateDescriptionLength() {
+  if (!descriptionInput || !descriptionLengthCountEl) return;
+  const length = descriptionInput.value.length;
+  descriptionLengthCountEl.textContent = String(length);
+  const overLimit = length > PROJECT_DESCRIPTION_MAX_LENGTH;
+  descriptionLengthHintEl?.classList.toggle("is-over-limit", overLimit);
+  descriptionInput.setCustomValidity(
+    overLimit
+      ? `Popis má ${length} znaků. Maximum je ${PROJECT_DESCRIPTION_MAX_LENGTH} znaků.`
+      : ""
+  );
+}
+
+descriptionInput?.addEventListener("input", updateDescriptionLength);
+
+const PROJECT_STATUSES = ["active", "realized"];
+
+const PROJECT_STATUS_LABELS = {
+  active: "Aktuální",
+  realized: "Realizovaný",
+};
+
+function normalizeProjectStatus(project) {
+  if (project?.status && PROJECT_STATUSES.includes(project.status)) {
+    return project.status;
+  }
+  return "active";
+}
+
+function projectStatusSelectOptions(selected) {
+  return PROJECT_STATUSES.map(
+    (s) =>
+      `<option value="${s}"${s === selected ? " selected" : ""}>${PROJECT_STATUS_LABELS[s]}</option>`
+  ).join("");
+}
+
 function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str ?? "";
@@ -160,7 +201,9 @@ function setEditMode(project) {
 
   projectForm.name.value = project.name ?? "";
   projectForm.location.value = project.location ?? "";
+  projectForm.status.value = normalizeProjectStatus(project);
   projectForm.description.value = project.description ?? "";
+  updateDescriptionLength();
   projectForm.link.value = project.link ?? "";
 
   setImageMode("url");
@@ -183,6 +226,7 @@ function cancelEdit() {
   imageHint.textContent =
     "Vložte URL, nebo nahrajte soubor do úložiště Supabase (project_images).";
   projectForm.reset();
+  updateDescriptionLength();
   setImageMode("url");
   clearImagePreview();
   formSuccessEl.hidden = true;
@@ -211,9 +255,16 @@ function renderTable() {
     const linkShort =
       project.link.length > 40 ? `${project.link.slice(0, 40)}…` : project.link;
 
+    const status = normalizeProjectStatus(project);
+
     tr.innerHTML = `
       <td data-label="Název">${escapeHtml(project.name)}</td>
       <td data-label="Lokalita">${escapeHtml(project.location)}</td>
+      <td data-label="Stav">
+        <select class="admin-status-select status-select" aria-label="Stav projektu">
+          ${projectStatusSelectOptions(status)}
+        </select>
+      </td>
       <td data-label="Odkaz"><a href="${escapeHtml(project.link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(linkShort)}</a></td>
       <td class="admin-actions-cell" data-label="">
         <div class="admin-actions">
@@ -225,6 +276,11 @@ function renderTable() {
 
     tr.querySelector(".edit-btn").addEventListener("click", () => setEditMode(project));
     tr.querySelector(".delete-btn").addEventListener("click", () => deleteProject(project));
+
+    const statusSelect = tr.querySelector(".status-select");
+    statusSelect.addEventListener("change", () =>
+      updateProjectStatus(project.id, statusSelect.value, statusSelect)
+    );
 
     tbodyEl.appendChild(tr);
   }
@@ -259,6 +315,31 @@ async function loadProjects() {
   }
 
   renderTable();
+}
+
+async function updateProjectStatus(id, status, selectEl) {
+  const authSession = await ensureAuthenticated();
+  if (!authSession) return;
+
+  if (!PROJECT_STATUSES.includes(status)) return;
+
+  if (selectEl) selectEl.disabled = true;
+
+  const { error } = await supabase.from("projects").update({ status }).eq("id", id);
+
+  if (selectEl) selectEl.disabled = false;
+
+  if (error) {
+    alert("Stav se nepodařilo uložit: " + error.message);
+    renderTable();
+    return;
+  }
+
+  const item = allProjects.find((p) => p.id === id);
+  if (item) item.status = status;
+  if (editingId === id && projectForm.status) {
+    projectForm.status.value = status;
+  }
 }
 
 async function deleteProject(project) {
@@ -329,6 +410,7 @@ projectForm.addEventListener("submit", async (e) => {
     description: projectForm.description.value.trim(),
     link: projectForm.link.value.trim(),
     image: imageValue,
+    status: projectForm.status.value,
   };
 
   formSubmitBtn.textContent = isEdit ? "Ukládám změny…" : "Ukládám…";
@@ -360,6 +442,7 @@ projectForm.addEventListener("submit", async (e) => {
     showFormMessage(formSuccessEl, "Projekt byl upraven.");
   } else {
     projectForm.reset();
+    updateDescriptionLength();
     setImageMode("url");
     clearImagePreview();
     showFormMessage(formSuccessEl, "Projekt byl uložen.");
@@ -371,4 +454,5 @@ projectForm.addEventListener("submit", async (e) => {
 refreshBtn.addEventListener("click", loadProjects);
 
 setPageEnabled(true);
+updateDescriptionLength();
 await loadProjects();

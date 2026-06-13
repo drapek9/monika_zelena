@@ -427,15 +427,21 @@ function renderPropertyGrid(root, items, { soldView = false } = {}) {
   root.innerHTML = items.map((p) => renderPropertyCard(p, { soldView })).join("");
 }
 
+const PROPERTIES_PAGE_STEP = 6;
+
 async function initPropertiesPage() {
   const root = document.getElementById("property-grid-page");
   if (!root) return;
 
   const buttons = document.querySelectorAll("[data-property-view]");
+  const loadMoreWrap = document.getElementById("property-load-more-wrap");
+  const loadMoreBtn = document.getElementById("property-load-more-btn");
   if (!buttons.length) return;
 
   let properties = [];
   let sold = [];
+  let currentView = "aktualni";
+  let visibleCount = PROPERTIES_PAGE_STEP;
 
   try {
     const catalog = await getPropertiesCatalog();
@@ -444,21 +450,46 @@ async function initPropertiesPage() {
   } catch (e) {
     console.error("Properties page load error:", e);
     root.innerHTML = propertiesLoadErrorHtml();
+    if (loadMoreWrap) loadMoreWrap.hidden = true;
     return;
   }
 
-  const setView = (view) => {
-    const isSold = view === "prodano";
-    const items = isSold ? sold : properties;
+  function getItemsForView(view) {
+    return view === "prodano" ? sold : properties;
+  }
+
+  function renderCurrentView() {
+    const isSold = currentView === "prodano";
+    const items = getItemsForView(currentView);
+
     if (!items.length) {
       root.innerHTML = propertiesEmptyHtml(isSold ? "sold" : "active");
-    } else {
-      renderPropertyGrid(root, items, { soldView: isSold });
+      if (loadMoreWrap) loadMoreWrap.hidden = true;
+      return;
     }
+
+    visibleCount = Math.min(visibleCount, items.length);
+    renderPropertyGrid(root, items.slice(0, visibleCount), { soldView: isSold });
+
+    if (loadMoreWrap) {
+      loadMoreWrap.hidden = visibleCount >= items.length;
+    }
+  }
+
+  const setView = (view) => {
+    currentView = view;
+    visibleCount = PROPERTIES_PAGE_STEP;
     buttons.forEach((b) =>
       b.classList.toggle("is-active", b.getAttribute("data-property-view") === view)
     );
+    renderCurrentView();
   };
+
+  loadMoreBtn?.addEventListener("click", () => {
+    const items = getItemsForView(currentView);
+    visibleCount = Math.min(visibleCount + PROPERTIES_PAGE_STEP, items.length);
+    renderCurrentView();
+  });
 
   setView("aktualni");
 
@@ -487,6 +518,7 @@ let _projectsPromise = null;
 
 function mapProjectFromDb(row) {
   const link = String(row.link || "").trim();
+  const status = row.status === "realized" ? "realized" : "active";
   return {
     id: row.id,
     title: row.name,
@@ -494,7 +526,16 @@ function mapProjectFromDb(row) {
     summary: row.description || "",
     image: row.image,
     externalUrl: link || "https://hvreality.cz/",
+    status,
   };
+}
+
+function getActiveProjects(projects) {
+  return projects.filter((p) => p.status !== "realized");
+}
+
+function getRealizedProjects(projects) {
+  return projects.filter((p) => p.status === "realized");
 }
 
 async function fetchProjects() {
@@ -521,15 +562,19 @@ async function syncDevProjectsStatCount() {
   if (!el) return;
   try {
     const projects = await getProjects();
-    el.setAttribute("data-count", String(projects.length));
+    el.setAttribute("data-count", String(getActiveProjects(projects).length));
   } catch (e) {
     console.error("Dev projects stat load error:", e);
   }
 }
 
-function projectsEmptyHtml() {
+function projectsEmptyHtml(kind = "active") {
+  const text =
+    kind === "realized"
+      ? "Žádné realizované developerské projekty."
+      : "Aktuálně žádné developerské projekty.";
   return `<div class="dev-empty-wrap">
-    <p class="lead dev-empty">Aktuálně žádné developerské projekty.</p>
+    <p class="lead dev-empty">${text}</p>
   </div>`;
 }
 
@@ -544,10 +589,12 @@ function renderDevCard(p) {
           <img src="${p.image}" alt="" loading="lazy" />
         </div>
         <div class="dev-card__body">
-          <p class="eyebrow" style="margin-bottom:0.5rem">${p.location}</p>
-          <h3>${p.title}</h3>
-          <p style="color:rgba(255,255,255,.72);font-size:0.92rem">${p.summary}</p>
-          <div style="margin-top:1.25rem">
+          <div class="dev-card__content">
+            <p class="eyebrow">${p.location}</p>
+            <h3>${p.title}</h3>
+            <p class="dev-card__summary">${p.summary}</p>
+          </div>
+          <div class="dev-card__actions">
             <a href="${webUrl}" class="btn btn--primary btn--sm" target="_blank" rel="noopener noreferrer">Web projektu</a>
           </div>
         </div>
@@ -558,15 +605,64 @@ async function loadProjects(selector, limit) {
   const root = document.querySelector(selector);
   if (!root) return;
   try {
-    let list = await getProjects();
+    let list = getActiveProjects(await getProjects());
     if (limit) list = list.slice(0, limit);
     root.innerHTML = list.length
       ? list.map((p) => renderDevCard(p)).join("")
-      : projectsEmptyHtml();
+      : projectsEmptyHtml("active");
   } catch (e) {
     console.error("Projects load error:", e);
     root.innerHTML = `<p role="alert">Projekty se nepodařilo načíst.</p>`;
   }
+}
+
+async function initProjectsPage() {
+  const root = document.getElementById("dev-grid-full");
+  if (!root) return;
+
+  const buttons = document.querySelectorAll("[data-project-view]");
+  if (!buttons.length) return;
+
+  let active = [];
+  let realized = [];
+  let currentView = "aktualni";
+
+  try {
+    const projects = await getProjects();
+    active = getActiveProjects(projects);
+    realized = getRealizedProjects(projects);
+  } catch (e) {
+    console.error("Projects page load error:", e);
+    root.innerHTML = `<p role="alert">Projekty se nepodařilo načíst.</p>`;
+    return;
+  }
+
+  function getItemsForView(view) {
+    return view === "realizovane" ? realized : active;
+  }
+
+  function renderCurrentView() {
+    const isRealized = currentView === "realizovane";
+    const items = getItemsForView(currentView);
+
+    root.innerHTML = items.length
+      ? items.map((p) => renderDevCard(p)).join("")
+      : projectsEmptyHtml(isRealized ? "realized" : "active");
+  }
+
+  const setView = (view) => {
+    currentView = view;
+    buttons.forEach((b) =>
+      b.classList.toggle("is-active", b.getAttribute("data-project-view") === view)
+    );
+    renderCurrentView();
+  };
+
+  setView("aktualni");
+
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => setView(btn.getAttribute("data-project-view")));
+  });
 }
 
 /* ----- Services icons (inline SVG) ----- */
@@ -852,6 +948,122 @@ function buildInfiniteTrackHtml(items, renderItem, duplicate) {
   return duplicate && items.length >= 2 ? cardHtml + cardHtml : cardHtml;
 }
 
+/* ----- Recenze (Supabase) ----- */
+let _reviewsPromise = null;
+
+function mapReviewFromDb(row) {
+  return {
+    id: row.id,
+    quote: row.text || "",
+    name: row.author || "",
+  };
+}
+
+async function fetchReviews() {
+  const supabase = await getSupabase();
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data || []).map(mapReviewFromDb);
+}
+
+function getReviews() {
+  if (!_reviewsPromise) {
+    _reviewsPromise = fetchReviews();
+  }
+  return _reviewsPromise;
+}
+
+function renderTestimonialCard(t) {
+  return `
+      <article class="testimonial-card">
+        <div class="testimonial-card__body">
+          <div class="testimonial-card__quote-wrap is-collapsed">
+            <p class="testimonial-card__quote">„${t.quote}“</p>
+          </div>
+          <button
+            type="button"
+            class="testimonial-card__toggle is-invisible"
+            aria-expanded="false"
+            aria-hidden="true"
+            tabindex="-1"
+          >
+            Zobrazit celé
+          </button>
+          <p class="testimonial-card__author">${t.name}</p>
+        </div>
+      </article>`;
+}
+
+function initTestimonialCardExpands(root = document) {
+  const cards = (root?.querySelectorAll ? root : document).querySelectorAll(".testimonial-card");
+
+  cards.forEach((card) => {
+    const wrap = card.querySelector(".testimonial-card__quote-wrap");
+    const toggle = card.querySelector(".testimonial-card__toggle");
+    if (!wrap || !toggle) return;
+
+    const setToggleVisible = (visible) => {
+      toggle.classList.toggle("is-invisible", !visible);
+      toggle.setAttribute("aria-hidden", visible ? "false" : "true");
+      if (visible) toggle.removeAttribute("tabindex");
+      else toggle.setAttribute("tabindex", "-1");
+    };
+
+    const updateOverflow = () => {
+      if (!wrap.classList.contains("is-collapsed")) return;
+      const overflows = wrap.scrollHeight > wrap.clientHeight + 1;
+      wrap.classList.toggle("is-overflowing", overflows);
+      setToggleVisible(overflows);
+    };
+
+    const collapse = () => {
+      card.classList.remove("is-expanded");
+      wrap.classList.add("is-collapsed");
+      wrap.classList.remove("is-expanded");
+      toggle.textContent = "Zobrazit celé";
+      toggle.setAttribute("aria-expanded", "false");
+      updateOverflow();
+    };
+
+    collapse();
+
+    if (!toggle.dataset.bound) {
+      toggle.dataset.bound = "1";
+      toggle.addEventListener("click", () => {
+        const willExpand = wrap.classList.contains("is-collapsed");
+        if (willExpand) {
+          card.classList.add("is-expanded");
+          wrap.classList.remove("is-collapsed", "is-overflowing");
+          wrap.classList.add("is-expanded");
+          setToggleVisible(true);
+          toggle.textContent = "Zobrazit méně";
+          toggle.setAttribute("aria-expanded", "true");
+        } else {
+          collapse();
+        }
+      });
+    }
+
+    if (!wrap.dataset.observed && typeof ResizeObserver !== "undefined") {
+      wrap.dataset.observed = "1";
+      const ro = new ResizeObserver(updateOverflow);
+      ro.observe(wrap);
+    } else {
+      updateOverflow();
+    }
+  });
+}
+
+function reviewsEmptyHtml() {
+  return `<div class="dev-empty-wrap">
+    <p class="lead dev-empty">Reference chybí.</p>
+  </div>`;
+}
+
 async function loadTestimonials(options = {}) {
   const viewport = document.getElementById(options.viewportId || "testimonial-viewport");
   const track = document.getElementById(options.trackId || "testimonial-track");
@@ -860,17 +1072,13 @@ async function loadTestimonials(options = {}) {
   if (!track || !viewport) return;
 
   try {
-    const res = await fetch("data/testimonials.json");
-    const list = await res.json();
-    track.innerHTML = buildInfiniteTrackHtml(
-      list,
-      (t) => `
-      <article class="testimonial-card">
-        <p class="testimonial-card__quote">„${t.quote}“</p>
-        <p class="testimonial-card__author">${t.name}</p>
-      </article>`,
-      true
-    );
+    const list = await getReviews();
+    if (!list.length) {
+      setCarouselNavVisible(prev, next, false);
+      track.innerHTML = reviewsEmptyHtml();
+      return;
+    }
+    track.innerHTML = buildInfiniteTrackHtml(list, renderTestimonialCard, true);
     initInfiniteCarousel({
       viewport,
       track,
@@ -880,8 +1088,10 @@ async function loadTestimonials(options = {}) {
       cardSelector: ".testimonial-card",
       autoplayMs: 4000,
     });
+    initTestimonialCardExpands(track);
   } catch {
-    track.innerHTML = "";
+    setCarouselNavVisible(prev, next, false);
+    track.innerHTML = reviewsEmptyHtml();
   }
 }
 
@@ -1089,7 +1299,7 @@ async function loadHomeDevSection() {
   if (!grid) return;
 
   try {
-    const projects = await getProjects();
+    const projects = getActiveProjects(await getProjects());
     initHomeCarouselSection({
       grid,
       sliderWrap: document.getElementById("dev-home-slider-wrap"),
@@ -1774,6 +1984,19 @@ function initEstimatePageShell() {
   window.scrollTo(0, 0);
 }
 
+/** Po tapnutí na mobilu zruší focus – šipka nezůstane zlatá. */
+function initCarouselNavTouchBlur() {
+  document.querySelectorAll("#main .t-nav-btn").forEach((btn) => {
+    btn.addEventListener(
+      "pointerup",
+      () => {
+        requestAnimationFrame(() => btn.blur());
+      },
+      { passive: true }
+    );
+  });
+}
+
 /* ----- Boot ----- */
 async function boot() {
   initLoader();
@@ -1790,6 +2013,7 @@ async function boot() {
   initVideoLightbox();
   initLeadForm();
   initParallax();
+  initCarouselNavTouchBlur();
 
   const path = (window.location.pathname.split("/").pop() || "index.html").split("?")[0];
 
@@ -1819,7 +2043,7 @@ async function boot() {
   }
 
   if (path === "developerske-projekty.html") {
-    await loadProjects("#dev-grid-full");
+    await initProjectsPage();
   }
 
   if (path === "sluzby.html") {
@@ -1922,19 +2146,13 @@ async function loadReferencePage() {
   const grid = document.getElementById("reference-grid");
   if (!grid) return;
   try {
-    const res = await fetch("data/testimonials.json");
-    const testimonials = await res.json();
-    grid.innerHTML = testimonials
-      .map(
-        (t) => `
-      <article class="testimonial-card">
-        <p class="testimonial-card__quote">„${t.quote}“</p>
-        <p class="testimonial-card__author">${t.name}</p>
-      </article>`
-      )
-      .join("");
+    const testimonials = await getReviews();
+    grid.innerHTML = testimonials.length
+      ? testimonials.map((t) => renderTestimonialCard(t)).join("")
+      : reviewsEmptyHtml();
+    initTestimonialCardExpands(grid);
   } catch {
-    grid.innerHTML = "";
+    grid.innerHTML = reviewsEmptyHtml();
   }
 }
 

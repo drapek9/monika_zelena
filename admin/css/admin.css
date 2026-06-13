@@ -57,6 +57,10 @@ body.admin-body {
   margin-bottom: 1.25rem;
 }
 
+.admin-nav a {
+  text-decoration: none;
+}
+
 .admin-nav a.is-active {
   pointer-events: none;
 }
@@ -155,6 +159,11 @@ body.admin-body {
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--admin-muted);
+}
+
+.admin-hint.is-over-limit {
+  color: #b42318;
+  font-weight: 600;
 }
 
 .admin-hint {

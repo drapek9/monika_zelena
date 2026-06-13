@@ -831,6 +831,8 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 
 .property-card__price {
   margin: 0;
+  margin-top: auto;
+  padding-top: 1rem;
   font-family: var(--font-display);
   font-size: 1.05rem;
   color: rgba(255, 255, 255, 0.72);
@@ -851,11 +853,14 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 }
 
 .property-card__content {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .property-card__actions {
-  margin-top: auto;
+  margin-top: 0;
   padding-top: 1.25rem;
   flex: 0 0 auto;
   position: relative;
@@ -996,14 +1001,6 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   right: 0;
 }
 
-#prezentace .presentation-videos-slider .t-nav-btn:hover:not(:disabled) {
-  border-color: var(--c-accent);
-  background: var(--c-white);
-  color: var(--c-black);
-  box-shadow:
-    0 6px 22px rgba(0, 0, 0, 0.16),
-    0 0 0 2px rgba(244, 193, 5, 0.4);
-}
 
 #prezentace .presentation-videos-slider .testimonial-viewport,
 #prezentace .presentation-videos-slider .testimonial-track {
@@ -1229,7 +1226,12 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 .dev-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  align-items: stretch;
   gap: 1.5rem;
+}
+
+.dev-grid > .dev-card {
+  height: 100%;
 }
 
 .dev-empty-wrap {
@@ -1262,6 +1264,37 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 
 .dev-card {
   min-height: 0;
+  height: 100%;
+}
+
+.dev-card__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.dev-card__content {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.dev-card__body .eyebrow {
+  margin-bottom: 0.5rem;
+}
+
+.dev-card__summary {
+  margin: 0;
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.dev-card__actions {
+  margin-top: 0;
+  padding-top: 1.25rem;
+  flex: 0 0 auto;
 }
 
 .dev-card .eyebrow,
@@ -1316,8 +1349,8 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   padding-bottom: 2.5rem;
 }
 
-/* Testimonials - žádný společný „panel“ za kartami, jen samotné .testimonial-card */
-.testimonial-slider {
+/* Reference – karusel se šipkami po stranách (ne nemovitosti / projekty / prodané) */
+.testimonial-slider:not(.property-home-slider) {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
@@ -1343,12 +1376,17 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   background: transparent;
 }
 
-/* Karusely na domovské stránce – šipky po stranách karet, vertikálně uprostřed */
-.property-home-slider {
-  display: block;
-  position: relative;
+/* Karusely na domů – šipky nahoře vlevo, karty na plnou šířku (jako sociální videa) */
+.testimonial-slider.property-home-slider,
+#property-home-slider-wrap,
+#dev-home-slider-wrap,
+#sold-home-slider-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5rem;
   width: 100%;
-  padding-inline: clamp(2.75rem, 6vw, 3.5rem);
+  padding-inline: 0;
 }
 
 .property-home-slider[hidden] {
@@ -1359,14 +1397,18 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   display: none !important;
 }
 
-.property-home-slider .testimonial-viewport {
-  width: 100%;
-}
-
-.property-home-slider .t-nav-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+.testimonial-slider.property-home-slider .t-nav-btn,
+#property-home-slider-wrap .t-nav-btn,
+#dev-home-slider-wrap .t-nav-btn,
+#sold-home-slider-wrap .t-nav-btn {
+  position: static;
+  transform: none;
+  top: auto;
+  left: auto;
+  right: auto;
+  order: 0;
+  flex: 0 0 auto;
+  align-self: auto;
   z-index: 2;
   width: 48px;
   height: 48px;
@@ -1381,22 +1423,17 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
     0 1px 4px rgba(72, 72, 72, 0.1);
 }
 
-.property-home-slider .t-nav-btn:first-of-type {
-  left: 0;
+.testimonial-slider.property-home-slider .testimonial-viewport,
+#property-home-slider-wrap .testimonial-viewport,
+#dev-home-slider-wrap .testimonial-viewport,
+#sold-home-slider-wrap .testimonial-viewport {
+  order: 1;
+  flex: 1 1 100%;
+  width: 100%;
+  margin-top: 0.15rem;
+  padding-block: 0;
 }
 
-.property-home-slider .t-nav-btn:last-of-type {
-  right: 0;
-}
-
-.property-home-slider .t-nav-btn:hover:not(:disabled) {
-  border-color: var(--c-accent);
-  background: var(--c-white);
-  color: var(--c-black);
-  box-shadow:
-    0 6px 22px rgba(0, 0, 0, 0.16),
-    0 0 0 2px rgba(244, 193, 5, 0.4);
-}
 
 #property-home-track,
 #sold-home-track,
@@ -1425,11 +1462,8 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 
 #dev-home-track .dev-card {
   min-width: 0;
-}
-
-/* Prodané na domů – stejná velikost karet a karusel jako u „Všechny nemovitosti“ */
-#sold-home-slider-wrap.property-home-slider {
-  padding-inline: clamp(2.75rem, 6vw, 3.5rem);
+  height: 100%;
+  align-self: stretch;
 }
 
 #sold-home-track .property-card__media {
@@ -1437,8 +1471,14 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 }
 
 .testimonial-card {
+  --testimonial-quote-height: 6.2rem;
+  --testimonial-card-height: 11.75rem;
   box-sizing: border-box;
-  padding: 1.25rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  height: var(--testimonial-card-height);
+  min-height: var(--testimonial-card-height);
+  padding: 1.1rem 1rem;
   border-radius: var(--radius-md);
   background: var(--c-white);
   border: 1px solid rgba(0, 0, 0, 0.08);
@@ -1446,15 +1486,100 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   min-width: 0;
 }
 
+.testimonial-card.is-expanded {
+  height: auto;
+}
+
+.testimonial-track > .testimonial-card,
+.reference-grid > .testimonial-card {
+  align-self: stretch;
+}
+
+.testimonial-card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+}
+
+.testimonial-card__quote-wrap {
+  position: relative;
+  flex: 0 0 var(--testimonial-quote-height);
+  height: var(--testimonial-quote-height);
+  min-height: var(--testimonial-quote-height);
+}
+
+.testimonial-card__quote-wrap.is-collapsed {
+  max-height: var(--testimonial-quote-height);
+  overflow: hidden;
+}
+
+.testimonial-card__quote-wrap.is-expanded {
+  flex: 0 1 auto;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  overflow: visible;
+}
+
+.testimonial-card__quote-wrap.is-collapsed.is-overflowing::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2.25rem;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--c-white) 88%);
+  pointer-events: none;
+}
+
 .testimonial-card__quote {
-  margin: 0 0 0.85rem;
+  margin: 0;
   font-size: 0.95rem;
   line-height: 1.55;
   color: var(--c-muted);
 }
 
+.testimonial-card__toggle {
+  flex: 0 0 1.2rem;
+  align-self: flex-start;
+  margin: 0.35rem 0 0.5rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.2rem;
+  color: var(--c-accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.testimonial-card__toggle.is-invisible {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.testimonial-card__toggle:hover {
+  color: var(--c-ink);
+}
+
+.testimonial-card__toggle:focus {
+  outline: none;
+}
+
+.testimonial-card__toggle:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
 .testimonial-card__author {
-  margin: 0;
+  margin: auto 0 0;
+  flex: 0 0 auto;
+  padding-top: 0.15rem;
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--c-ink);
@@ -1473,6 +1598,13 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   margin-top: 2rem;
 }
 
+.reference-grid > .dev-empty-wrap,
+.testimonial-track > .dev-empty-wrap {
+  grid-column: 1 / -1;
+  flex: 0 0 100%;
+  min-width: 100%;
+}
+
 .t-nav-btn {
   width: 44px;
   height: 44px;
@@ -1483,15 +1615,20 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   display: grid;
   place-items: center;
   transition: border-color 0.25s, background 0.25s, opacity 0.25s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.t-nav-btn:focus {
+  outline: none;
+}
+
+.t-nav-btn:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 3px;
 }
 
 .t-nav-btn--edge {
   align-self: center;
-}
-
-.t-nav-btn:hover:not(:disabled) {
-  border-color: var(--c-accent);
-  background: rgba(244, 193, 5, 0.12);
 }
 
 .t-nav-btn:disabled {
@@ -1538,7 +1675,33 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
     0 1px 4px rgba(72, 72, 72, 0.1);
 }
 
-.social-videos-slider__nav .t-nav-btn:hover:not(:disabled) {
+/* Hover jen na myši; :active zlaté při samotném kliknutí/tapnutí (mobil i desktop) */
+@media (hover: hover) {
+  .t-nav-btn:hover:not(:disabled) {
+    border-color: var(--c-accent);
+    background: rgba(244, 193, 5, 0.12);
+  }
+
+  .property-home-slider .t-nav-btn:hover:not(:disabled),
+  #prezentace .presentation-videos-slider .t-nav-btn:hover:not(:disabled),
+  .social-videos-slider__nav .t-nav-btn:hover:not(:disabled) {
+    border-color: var(--c-accent);
+    background: var(--c-white);
+    color: var(--c-black);
+    box-shadow:
+      0 6px 22px rgba(0, 0, 0, 0.16),
+      0 0 0 2px rgba(244, 193, 5, 0.4);
+  }
+}
+
+.t-nav-btn:active:not(:disabled) {
+  border-color: var(--c-accent);
+  background: rgba(244, 193, 5, 0.12);
+}
+
+.property-home-slider .t-nav-btn:active:not(:disabled),
+#prezentace .presentation-videos-slider .t-nav-btn:active:not(:disabled),
+.social-videos-slider__nav .t-nav-btn:active:not(:disabled) {
   border-color: var(--c-accent);
   background: var(--c-white);
   color: var(--c-black);
@@ -2315,3 +2478,4 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
     grid-template-columns: 1fr;
   }
 }
+

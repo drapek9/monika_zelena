@@ -141,8 +141,18 @@ create table if not exists public.projects (
   description text not null default '',
   link text not null,
   image text not null,
+  status text not null default 'active' check (status in ('active', 'realized')),
   created_at timestamptz not null default now()
 );
+
+-- Migrace: stav projektu (active | realized)
+alter table public.projects add column if not exists status text;
+update public.projects set status = 'active' where status is null;
+alter table public.projects alter column status set default 'active';
+alter table public.projects alter column status set not null;
+alter table public.projects drop constraint if exists projects_status_check;
+alter table public.projects add constraint projects_status_check
+  check (status in ('active', 'realized'));
 
 alter table public.projects enable row level security;
 
@@ -226,3 +236,53 @@ create policy "project_images_auth_delete"
   for delete
   to authenticated
   using (bucket_id = 'project_images');
+
+-- ---------------------------------------------------------------------------
+-- Recenze (reference na webu)
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.reviews (
+  id uuid primary key default gen_random_uuid(),
+  text text not null,
+  author text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.reviews enable row level security;
+
+drop policy if exists "reviews_public_read" on public.reviews;
+drop policy if exists "reviews_select_authenticated" on public.reviews;
+drop policy if exists "reviews_insert_authenticated" on public.reviews;
+drop policy if exists "reviews_update_authenticated" on public.reviews;
+drop policy if exists "reviews_delete_authenticated" on public.reviews;
+
+create policy "reviews_public_read"
+  on public.reviews
+  for select
+  to anon
+  using (true);
+
+create policy "reviews_select_authenticated"
+  on public.reviews
+  for select
+  to authenticated
+  using (true);
+
+create policy "reviews_insert_authenticated"
+  on public.reviews
+  for insert
+  to authenticated
+  with check (true);
+
+create policy "reviews_update_authenticated"
+  on public.reviews
+  for update
+  to authenticated
+  using (true)
+  with check (true);
+
+create policy "reviews_delete_authenticated"
+  on public.reviews
+  for delete
+  to authenticated
+  using (true);
