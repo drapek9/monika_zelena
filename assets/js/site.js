@@ -162,11 +162,15 @@ async function initFooterSocialLinks() {
 
 /* ----- Scroll reveal ----- */
 function initReveal() {
+  document.querySelectorAll(".hero__stats[data-reveal]").forEach((el) => {
+    el.classList.add("is-visible");
+  });
+
   if (prefersReducedMotion) {
     document.querySelectorAll("[data-reveal]").forEach((el) => el.classList.add("is-visible"));
     return;
   }
-  const els = document.querySelectorAll("[data-reveal]");
+  const els = document.querySelectorAll("[data-reveal]:not(.is-visible)");
   if (!els.length) return;
   const io = new IntersectionObserver(
     (entries) => {
@@ -197,29 +201,50 @@ function animateValue(el, end, suffix = "", duration = 1600) {
   requestAnimationFrame(frame);
 }
 
+function runStatAnimation(el) {
+  if (!el || el.dataset.statAnimated === "true") return;
+
+  const raw = el.getAttribute("data-count");
+  if (raw == null || raw === "") return;
+
+  const suffix = el.getAttribute("data-suffix") || "";
+  const end = parseFloat(raw);
+  if (Number.isNaN(end)) return;
+
+  el.dataset.statAnimated = "true";
+
+  if (prefersReducedMotion) {
+    el.textContent = end.toLocaleString("cs-CZ") + suffix;
+    return;
+  }
+
+  animateValue(el, end, suffix);
+}
+
 function initStats() {
   const statNums = document.querySelectorAll("[data-count]");
   if (!statNums.length) return;
 
-  const io = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((en) => {
-        if (!en.isIntersecting) return;
-        const el = en.target;
-        const raw = el.getAttribute("data-count");
-        const suffix = el.getAttribute("data-suffix") || "";
-        const end = parseFloat(raw);
-        if (prefersReducedMotion) {
-          el.textContent = end.toLocaleString("cs-CZ") + suffix;
-        } else {
-          animateValue(el, end, suffix);
-        }
-        io.unobserve(el);
-      });
-    },
-    { threshold: 0.4 }
-  );
-  statNums.forEach((el) => io.observe(el));
+  statNums.forEach((el) => {
+    if (el.hasAttribute("data-stat")) return;
+
+    if (el.closest(".hero__stats")) {
+      runStatAnimation(el);
+      return;
+    }
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((en) => {
+          if (!en.isIntersecting) return;
+          runStatAnimation(en.target);
+          io.unobserve(en.target);
+        });
+      },
+      { threshold: 0.2 }
+    );
+    io.observe(el);
+  });
 }
 
 /* ----- Properties (Supabase) ----- */
@@ -563,6 +588,8 @@ async function syncDevProjectsStatCount() {
   try {
     const projects = await getProjects();
     el.setAttribute("data-count", String(getActiveProjects(projects).length));
+    delete el.dataset.statAnimated;
+    runStatAnimation(el);
   } catch (e) {
     console.error("Dev projects stat load error:", e);
   }
@@ -1545,6 +1572,121 @@ function initVideoLightbox() {
   });
 }
 
+/* ----- EmailJS ----- */
+let _sendFormEmailFn = null;
+
+async function getSendFormEmailFn() {
+  if (!_sendFormEmailFn) {
+    const mod = await import("./emailjs.js");
+    _sendFormEmailFn = mod.sendFormEmail;
+  }
+  return _sendFormEmailFn;
+}
+
+async function submitViaEmailJs(formKey, templateParams, { submitBtn, feedbackEl, onSuccess }) {
+  const originalText = submitBtn?.textContent;
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Odesílám…";
+  }
+
+  try {
+    const sendFormEmail = await getSendFormEmailFn();
+    const result = await sendFormEmail(formKey, templateParams);
+
+    if (!result.ok && !result.notConfigured) {
+      if (feedbackEl) {
+        feedbackEl.style.display = "block";
+        feedbackEl.textContent =
+          result.error || "Odeslání se nezdařilo. Zkuste to prosím znovu, nebo mě kontaktujte telefonicky.";
+      }
+      return result;
+    }
+
+    onSuccess?.(result);
+    return result;
+  } catch {
+    if (feedbackEl) {
+      feedbackEl.style.display = "block";
+      feedbackEl.textContent =
+        "Odeslání se nezdařilo. Zkuste to prosím znovu, nebo mě kontaktujte telefonicky.";
+    }
+    return { ok: false };
+  } finally {
+    if (submitBtn?.isConnected) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText ?? "";
+    }
+  }
+}
+
+function showFormSuccessState(container, { title, message }) {
+  if (!container) return;
+
+  container.classList.add("is-submitted");
+  container.innerHTML = `
+    <div class="form-success-state" role="status">
+      <p class="form-success-state__icon" aria-hidden="true">✓</p>
+      <h3 class="form-success-state__title">${title}</h3>
+      <p class="form-success-state__message">${message}</p>
+    </div>`;
+
+  container.scrollIntoView({
+    behavior: prefersReducedMotion ? "auto" : "smooth",
+    block: "nearest",
+  });
+}
+
+function initContactForm() {
+  const form = document.getElementById("contact-form");
+  if (!form) return;
+
+  const feedback = document.getElementById("contact-feedback");
+  const submitBtn = form.querySelector('button[type="submit"]');
+  const panel = form.closest(".lead-panel");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    const phoneDigits = (form.phone?.value || "").replace(/\D/g, "");
+    if (phoneDigits.length < 9) {
+      form.phone?.focus();
+      return;
+    }
+
+    if (feedback) {
+      feedback.style.display = "none";
+      feedback.textContent = "";
+    }
+
+    await submitViaEmailJs(
+      "contact",
+      {
+        from_name: form.name.value.trim(),
+        reply_to: form.email.value.trim(),
+        phone: form.phone.value.trim(),
+        message: form.message.value.trim(),
+        form_label: "Kontaktní formulář",
+      },
+      {
+        submitBtn,
+        feedbackEl: feedback,
+        onSuccess: () => {
+          showFormSuccessState(panel, {
+            title: "Děkuji za zprávu",
+            message: "Vše proběhlo v pořádku. Ozvu se co nejdříve.",
+          });
+        },
+      }
+    );
+  });
+}
+
 /* ----- Lead form wizard ----- */
 function initLeadForm() {
   const formRoot = document.getElementById("lead-wizard");
@@ -1625,7 +1767,7 @@ function initLeadForm() {
     btn.addEventListener("click", () => setStep(step - 1));
   });
 
-  document.getElementById("lead-submit")?.addEventListener("click", (e) => {
+  document.getElementById("lead-submit")?.addEventListener("click", async (e) => {
     e.preventDefault();
     data.name = document.getElementById("lead-name")?.value.trim() || "";
     data.email = document.getElementById("lead-email")?.value.trim() || "";
@@ -1651,19 +1793,37 @@ function initLeadForm() {
       return;
     }
 
-    const summary = document.getElementById("lead-summary");
-    if (summary) {
-      summary.innerHTML = `
-        <p><strong>Typ:</strong> ${data.type}</p>
-        <p><strong>Adresa:</strong> ${data.street ? `${data.street}, ` : ""}${data.city}</p>
-        <p><strong>Vlastník:</strong> ${data.ownerRole}</p>
-        <p><strong>Stav:</strong> ${data.condition}</p>
-        <p><strong>Kontakt:</strong> ${data.name}, ${data.email}, ${data.phone}</p>
-        ${data.message ? `<p><strong>Zpráva:</strong> ${data.message}</p>` : ""}
-        <p class="mt-sm" style="opacity:.75">V produkční verzi by data odešla na server / CRM. Nyní jen náhled.</p>`;
-    }
-    const fd = document.getElementById("lead-feedback");
-    if (fd) fd.innerHTML = `<strong>Děkuji.</strong> Ozvu se co nejdříve s návrhem dalšího postupu.`;
+    const feedback = document.getElementById("lead-feedback");
+    const submitBtn = document.getElementById("lead-submit");
+
+    await submitViaEmailJs(
+      "lead",
+      {
+        from_name: data.name,
+        reply_to: data.email,
+        phone: data.phone,
+        message: data.message || "(bez zprávy)",
+        property_type: data.type,
+        city: data.city,
+        street: data.street,
+        owner_role: data.ownerRole,
+        condition: data.condition,
+        disposition: "—",
+        area: "—",
+        ownership: "—",
+        form_label: "Poptávka na prodej nemovitosti",
+      },
+      {
+        submitBtn,
+        feedbackEl: feedback,
+        onSuccess: () => {
+          showFormSuccessState(formRoot, {
+            title: "Děkuji",
+            message: "Vše proběhlo v pořádku. Ozvu se co nejdříve s návrhem dalšího postupu.",
+          });
+        },
+      }
+    );
   });
 
   setStep(0);
@@ -1875,7 +2035,7 @@ function initEstimateForm() {
     btn.addEventListener("click", () => setStep(step - 1));
   });
 
-  document.getElementById("estimate-submit")?.addEventListener("click", (e) => {
+  document.getElementById("estimate-submit")?.addEventListener("click", async (e) => {
     e.preventDefault();
     data.name = document.getElementById("estimate-name")?.value.trim() || "";
     data.email = document.getElementById("estimate-email")?.value.trim() || "";
@@ -1901,22 +2061,37 @@ function initEstimateForm() {
       return;
     }
 
-    const summary = document.getElementById("estimate-summary");
-    if (summary) {
-      summary.innerHTML = `
-        <p><strong>Typ:</strong> ${data.type}</p>
-        <p><strong>Adresa:</strong> ${data.street ? `${data.street}, ` : ""}${data.city}</p>
-        <p><strong>Vlastník:</strong> ${data.ownerRole}</p>
-        <p><strong>Dispozice:</strong> ${data.disposition} · <strong>Plocha:</strong> ${data.area} m²</p>
-        <p><strong>Druh vlastnictví:</strong> ${data.ownership}</p>
-        <p><strong>Kontakt:</strong> ${data.name}, ${data.email}, ${data.phone}</p>
-        ${data.message ? `<p><strong>Zpráva:</strong> ${data.message}</p>` : ""}
-        <p class="mt-sm" style="opacity:.75">V produkční verzi by data odešla na server / CRM. Nyní jen náhled.</p>`;
-    }
     const feedback = document.getElementById("estimate-feedback");
-    if (feedback) {
-      feedback.innerHTML = `<strong>Děkuji.</strong> Ozvu se co nejdříve s nezávazným odhadem.`;
-    }
+    const submitBtn = document.getElementById("estimate-submit");
+
+    await submitViaEmailJs(
+      "estimate",
+      {
+        from_name: data.name,
+        reply_to: data.email,
+        phone: data.phone,
+        message: data.message || "(bez zprávy)",
+        property_type: data.type,
+        city: data.city,
+        street: data.street,
+        owner_role: data.ownerRole,
+        condition: "—",
+        disposition: data.disposition,
+        area: data.area,
+        ownership: data.ownership,
+        form_label: "Žádost o odhad nemovitosti zdarma",
+      },
+      {
+        submitBtn,
+        feedbackEl: feedback,
+        onSuccess: () => {
+          showFormSuccessState(formRoot, {
+            title: "Děkuji",
+            message: "Vše proběhlo v pořádku. Ozvu se co nejdříve s nezávazným odhadem.",
+          });
+        },
+      }
+    );
   });
 
   setStep(0);
@@ -1997,31 +2172,54 @@ function initCarouselNavTouchBlur() {
   });
 }
 
+/* ----- Cookie souhlas ----- */
+function initCookieConsentLoader() {
+  if (window.__mzCookiesLoaderInit) return;
+  window.__mzCookiesLoaderInit = true;
+
+  const configScript = document.createElement("script");
+  configScript.src = "assets/js/cookies-config.js";
+  configScript.onload = () => {
+    if (document.getElementById("cookie-consent-script")) return;
+    const script = document.createElement("script");
+    script.id = "cookie-consent-script";
+    script.src = "assets/js/cookies.js";
+    script.onload = () => {
+      if (typeof initCookieConsent === "function") initCookieConsent();
+    };
+    document.body.appendChild(script);
+  };
+  document.body.appendChild(configScript);
+}
+
 /* ----- Boot ----- */
 async function boot() {
   initLoader();
   initIndexHashScrollPrep();
   initEstimatePageShell();
+
+  const path = (window.location.pathname.split("/").pop() || "index.html").split("?")[0];
+
+  initReveal();
+  initStats();
+
+  if (path === "index.html" || path === "") {
+    syncDevProjectsStatCount();
+  }
+
   await loadPartial("header-mount", "partials/header.html");
   await loadPartial("footer-mount", "partials/footer.html");
   await initFooterSocialLinks();
+  initCookieConsentLoader();
 
   const y = document.getElementById("year");
   if (y) y.textContent = String(new Date().getFullYear());
 
-  initReveal();
   initVideoLightbox();
+  initContactForm();
   initLeadForm();
   initParallax();
   initCarouselNavTouchBlur();
-
-  const path = (window.location.pathname.split("/").pop() || "index.html").split("?")[0];
-
-  if (path === "index.html" || path === "") {
-    await syncDevProjectsStatCount();
-  }
-
-  initStats();
 
   if (path === "index.html" || path === "") {
     await loadHomePropertiesSection();

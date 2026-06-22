@@ -1944,6 +1944,45 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   color: var(--c-accent);
 }
 
+.lead-panel.is-submitted {
+  text-align: center;
+}
+
+.form-success-state {
+  padding: clamp(1.5rem, 4vw, 2.5rem) 0;
+  animation: fadeStep 0.45s var(--ease-out);
+}
+
+.form-success-state__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  margin: 0 auto 1.25rem;
+  border-radius: 50%;
+  background: rgba(244, 193, 5, 0.15);
+  border: 2px solid var(--c-accent);
+  color: var(--c-accent);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.form-success-state__title {
+  color: var(--c-white);
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.35rem, 3vw, 1.65rem);
+}
+
+.form-success-state__message {
+  margin: 0 auto;
+  max-width: 36ch;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
 .lead-select {
   width: 100%;
   padding: 1rem 1.1rem;
@@ -2117,6 +2156,15 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   color: var(--c-accent);
 }
 
+.footer-legal-link {
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 0.25s var(--ease-out);
+}
+
+.footer-legal-link:hover {
+  color: var(--c-accent);
+}
+
 .footer-credit {
   margin-top: 0;
   padding-top: 1.25rem;
@@ -2167,6 +2215,271 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 .page-hero h1 {
   color: var(--c-white);
   margin-bottom: 0.75rem;
+}
+
+/* Právní stránky (GDPR, cookies) */
+.legal-meta {
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.legal-content {
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.legal-toc {
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2.5rem;
+  background: var(--c-surface-light);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--c-section-line);
+}
+
+.legal-toc__title {
+  font-family: var(--font-alt);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--c-soft);
+  margin-bottom: 0.75rem;
+}
+
+.legal-toc ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.legal-toc a {
+  font-size: 0.9375rem;
+  color: var(--c-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  transition: color 0.25s var(--ease-out);
+}
+
+.legal-toc a:hover {
+  color: var(--c-accent);
+}
+
+.legal-section + .legal-section {
+  margin-top: 2.5rem;
+  padding-top: 2.5rem;
+  border-top: 1px solid var(--c-section-line);
+}
+
+.legal-section__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2.5vw, 1.625rem);
+  font-weight: 500;
+  color: var(--c-ink);
+  margin-bottom: 1rem;
+}
+
+.legal-section__subtitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--c-ink);
+  margin: 1.25rem 0 0.65rem;
+}
+
+.legal-content p,
+.legal-content li {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--c-muted);
+}
+
+.legal-content p + p,
+.legal-content ul + p,
+.legal-content p + ul {
+  margin-top: 0.85rem;
+}
+
+.legal-content ul {
+  list-style: disc;
+  padding-left: 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.legal-content a {
+  color: var(--c-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  transition: color 0.25s var(--ease-out);
+}
+
+.legal-content a:hover {
+  color: var(--c-accent);
+}
+
+.legal-box {
+  margin: 1rem 0;
+  padding: 1.25rem 1.5rem;
+  background: var(--c-surface-light);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--c-section-line);
+}
+
+.legal-box p {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+}
+
+.legal-box p + p {
+  margin-top: 0.35rem;
+}
+
+.legal-placeholder {
+  color: var(--c-accent);
+  font-weight: 500;
+  font-style: italic;
+}
+
+.legal-table-wrap {
+  margin-top: 1rem;
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--c-section-line);
+}
+
+.legal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.legal-table th,
+.legal-table td {
+  padding: 0.85rem 1rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--c-section-line);
+  line-height: 1.55;
+  color: var(--c-muted);
+}
+
+.legal-table th {
+  background: var(--c-surface-mid);
+  font-weight: 600;
+  color: var(--c-ink);
+}
+
+.legal-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Cookie lišta */
+.cookie-banner {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 250;
+  padding: 1rem;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(100%);
+  transition:
+    opacity 0.35s var(--ease-out),
+    transform 0.35s var(--ease-out);
+}
+
+.cookie-banner.is-visible {
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cookie-banner__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--c-white);
+  border: 1px solid var(--c-section-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.cookie-banner__text {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.cookie-banner__title {
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 500;
+  color: var(--c-ink);
+  margin-bottom: 0.35rem;
+}
+
+.cookie-banner__desc {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--c-muted);
+}
+
+.cookie-banner__desc a {
+  color: var(--c-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.cookie-banner__desc a:hover {
+  color: var(--c-accent);
+}
+
+.cookie-banner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  flex-shrink: 0;
+}
+
+.cookie-consent-panel {
+  margin-top: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--c-surface-light);
+  border: 1px solid var(--c-section-line);
+  border-radius: var(--radius-md);
+}
+
+.cookie-consent-panel__status {
+  font-size: 0.9375rem;
+  color: var(--c-muted);
+  margin-bottom: 1rem;
+}
+
+.cookie-consent-panel__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+@media (max-width: 479px) {
+  .cookie-banner__actions {
+    width: 100%;
+  }
+
+  .cookie-banner__actions .btn {
+    flex: 1 1 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cookie-banner {
+    transition: none;
+  }
 }
 
 /* Prázdný pás pod page-hero (stránky bez hlavního obsahu) */

@@ -109,20 +109,5 @@
       }
     </style>
     <script src="assets/js/site.js" defer></script>
-    <script>
-      document.getElementById("contact-form")?.addEventListener("submit", function (e) {
-        e.preventDefault();
-        var phone = (document.getElementById("cf-phone")?.value || "").replace(/\D/g, "");
-        if (phone.length < 9) {
-          document.getElementById("cf-phone")?.focus();
-          return;
-        }
-        var fb = document.getElementById("contact-feedback");
-        if (fb) {
-          fb.style.display = "block";
-          fb.textContent = "Děkuji za zprávu. V produkční verzi by zpráva odešla na server; nyní jen ukázka.";
-        }
-      });
-    </script>
   </body>
 </html>
