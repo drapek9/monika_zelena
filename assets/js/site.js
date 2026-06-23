@@ -2172,6 +2172,18 @@ function initCarouselNavTouchBlur() {
   });
 }
 
+/* ----- SEO ----- */
+async function initSeo() {
+  const pageKey = document.body.dataset.seoPage;
+  if (!pageKey) return;
+  try {
+    const { initStaticPageSeo } = await import("./seo.js");
+    initStaticPageSeo(pageKey);
+  } catch (e) {
+    console.error("SEO init error:", e);
+  }
+}
+
 /* ----- Cookie souhlas ----- */
 function initCookieConsentLoader() {
   if (window.__mzCookiesLoaderInit) return;
@@ -2202,6 +2214,7 @@ async function boot() {
 
   initReveal();
   initStats();
+  initSeo();
 
   if (path === "index.html" || path === "") {
     syncDevProjectsStatCount();
@@ -2283,7 +2296,8 @@ async function initPropertyDetail() {
       if (titleEl) titleEl.textContent = "Nemovitost nenalezena";
       return;
     }
-    document.title = `${p.title} | Monika Zelená`;
+    const { applyPropertySeo } = await import("./seo.js");
+    applyPropertySeo(p);
     if (titleEl) titleEl.textContent = p.title;
     if (priceEl) priceEl.textContent = formatPropertyPrice(p);
     if (locEl) locEl.textContent = p.location;
@@ -2363,7 +2377,8 @@ async function initServiceDetail() {
     const list = await res.json();
     const s = list.find((x) => x.slug === slug) || list[0];
     if (!root || !s) return;
-    document.title = `${s.title} | Monika Zelená`;
+    const { applyServiceSeo } = await import("./seo.js");
+    applyServiceSeo(s);
 
     if (s.slug === "odhad") {
       document.body.classList.add("has-light-hero");
