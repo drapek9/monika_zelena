@@ -21,14 +21,14 @@
  */
 
 /** Veřejný klíč z EmailJS (Account → API Keys). */
-export const EMAILJS_PUBLIC_KEY = "53BraLtdA9dtrb9xA";
+export const EMAILJS_PUBLIC_KEY = "bN5Y8oC1J4WPax-aN";
 
 /** ID e-mailové služby (Email Services). */
-export const EMAILJS_SERVICE_ID = "service_fyy1p0g";
+export const EMAILJS_SERVICE_ID = "service_js59njc";
 
 /** ID šablon (Email Templates). lead a estimate sdílí jednu šablonu. */
 export const EMAILJS_TEMPLATES = {
-  contact: "template_pgil9a2",
-  lead: "template_8nfusmu",
-  estimate: "template_8nfusmu",
+  contact: "template_eyc1wm2",
+  lead: "template_cawi7i8",
+  estimate: "template_cawi7i8",
 };
