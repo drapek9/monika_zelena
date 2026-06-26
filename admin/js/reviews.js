@@ -1,4 +1,4 @@
-import { supabase } from "./config.js";
+import { apiFetch } from "./api.js";
 import {
   requireAuth,
   ensureAuthenticated,
@@ -143,20 +143,16 @@ async function loadReviews() {
   listEmptyEl.hidden = true;
   tableWrapEl.hidden = true;
 
-  const { data, error } = await supabase
-    .from("reviews")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  listLoadingEl.hidden = true;
-
-  if (error) {
+  try {
+    const data = await apiFetch("reviews");
+    listLoadingEl.hidden = true;
+    allReviews = data ?? [];
+  } catch (error) {
+    listLoadingEl.hidden = true;
     listErrorEl.textContent = "Nepodařilo se načíst recenze: " + error.message;
     listErrorEl.hidden = false;
     return;
   }
-
-  allReviews = data ?? [];
 
   if (editingId && !allReviews.some((r) => r.id === editingId)) {
     cancelEdit();
@@ -174,9 +170,9 @@ async function deleteReview(review) {
   );
   if (!confirmed) return;
 
-  const { error } = await supabase.from("reviews").delete().eq("id", review.id);
-
-  if (error) {
+  try {
+    await apiFetch(`reviews/${review.id}`, { method: "DELETE" });
+  } catch (error) {
     alert("Chyba při mazání: " + error.message);
     return;
   }
@@ -210,19 +206,23 @@ reviewForm.addEventListener("submit", async (e) => {
     author: reviewForm.author.value.trim(),
   };
 
-  const { error } = isEdit
-    ? await supabase.from("reviews").update(payload).eq("id", editingId)
-    : await supabase.from("reviews").insert(payload);
-
-  formSubmitBtn.disabled = false;
-  formSubmitBtn.textContent = isEdit ? "Uložit změny" : "Uložit recenzi";
-
-  if (error) {
+  try {
+    if (isEdit) {
+      await apiFetch(`reviews/${editingId}`, { method: "PUT", body: payload });
+    } else {
+      await apiFetch("reviews", { method: "POST", body: payload });
+    }
+  } catch (error) {
+    formSubmitBtn.disabled = false;
+    formSubmitBtn.textContent = isEdit ? "Uložit změny" : "Uložit recenzi";
     formErrorEl.textContent =
       (isEdit ? "Úprava se nezdařila: " : "Uložení se nezdařilo: ") + error.message;
     formErrorEl.hidden = false;
     return;
   }
+
+  formSubmitBtn.disabled = false;
+  formSubmitBtn.textContent = isEdit ? "Uložit změny" : "Uložit recenzi";
 
   if (isEdit) {
     cancelEdit();

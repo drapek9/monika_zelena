@@ -1,0 +1,9 @@
+{
+  "social": [
+    { "url": "/videa/jedna.mp4", "name": "jedna" },
+    { "url": "/videa/dva.mp4", "name": "dva" },
+    { "url": "/videa/tri.mp4", "name": "tri" },
+    { "url": "/videa/ctyri.mp4", "name": "ctyri" }
+  ],
+  "presentation": []
+}

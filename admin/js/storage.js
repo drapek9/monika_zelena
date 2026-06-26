@@ -1,97 +1,76 @@
-import { supabase } from "./config.js";
+import { apiFetch } from "./api.js";
 
-export const PROPERTY_IMAGES_BUCKET = "property_images";
-export const PROJECT_IMAGES_BUCKET = "project_images";
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-const MAX_BYTES = 5 * 1024 * 1024;
-
-function extensionFromFile(file) {
-  const fromName = file.name.split(".").pop()?.toLowerCase();
-  if (fromName && ["jpg", "jpeg", "png", "webp", "gif"].includes(fromName)) {
-    return fromName === "jpeg" ? "jpg" : fromName;
-  }
-  const map = {
-    "image/jpeg": "jpg",
-    "image/png": "png",
-    "image/webp": "webp",
-    "image/gif": "gif",
-  };
-  return map[file.type] || "jpg";
-}
+const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime", "video/x-m4v"];
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 
 function validateImageFile(file) {
-  if (!file) {
-    throw new Error("Nebyl vybrán žádný soubor.");
-  }
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  if (!file) throw new Error("Nebyl vybrán žádný soubor.");
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
     throw new Error("Povolené formáty: JPEG, PNG, WebP, GIF.");
   }
-  if (file.size > MAX_BYTES) {
+  if (file.size > MAX_IMAGE_BYTES) {
     throw new Error("Soubor je příliš velký (max. 5 MB).");
   }
 }
 
-export async function uploadImageToBucket(file, bucket) {
+function validateVideoFile(file) {
+  if (!file) throw new Error("Nebyl vybrán žádný soubor.");
+  if (!ALLOWED_VIDEO_TYPES.includes(file.type)) {
+    throw new Error("Povolené formáty: MP4, WebM, MOV, M4V.");
+  }
+  if (file.size > MAX_VIDEO_BYTES) {
+    throw new Error("Video je příliš velké (max. 100 MB).");
+  }
+}
+
+async function uploadImage(file, bucket) {
   validateImageFile(file);
-
-  const ext = extensionFromFile(file);
-  const path = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
-
-  const { data, error } = await supabase.storage.from(bucket).upload(path, file, {
-    cacheControl: "3600",
-    upsert: false,
-    contentType: file.type,
-  });
-
-  if (error) throw error;
-
-  const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path);
-  return urlData.publicUrl;
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("bucket", bucket);
+  const data = await apiFetch("upload", { method: "POST", body: formData });
+  const url = typeof data?.url === "string" ? data.url.trim() : "";
+  if (!url) {
+    throw new Error("Server nevrátil URL nahraného souboru.");
+  }
+  return url;
 }
 
-export function getImageStoragePath(imageUrl, bucket) {
-  if (!imageUrl || typeof imageUrl !== "string") return null;
-
-  try {
-    const pathname = new URL(imageUrl).pathname;
-    const marker = `/storage/v1/object/public/${bucket}/`;
-    const idx = pathname.indexOf(marker);
-    if (idx === -1) return null;
-    return decodeURIComponent(pathname.slice(idx + marker.length));
-  } catch {
-    return null;
-  }
-}
-
-export async function deleteImageFromStorage(imageUrl, bucket) {
-  const path = getImageStoragePath(imageUrl, bucket);
-  if (!path) {
-    return { skipped: true, reason: "not_storage_url" };
-  }
-
-  const { data, error } = await supabase.storage.from(bucket).remove([path]);
-  if (error) throw error;
-
-  return { skipped: false, path, data };
+async function uploadMedia(file, bucket) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("bucket", bucket);
+  return apiFetch("upload", { method: "POST", body: formData });
 }
 
 export async function uploadPropertyImage(file) {
-  return uploadImageToBucket(file, PROPERTY_IMAGES_BUCKET);
-}
-
-export function getPropertyImageStoragePath(imageUrl) {
-  return getImageStoragePath(imageUrl, PROPERTY_IMAGES_BUCKET);
-}
-
-export async function deletePropertyImageFromStorage(imageUrl) {
-  return deleteImageFromStorage(imageUrl, PROPERTY_IMAGES_BUCKET);
+  return uploadImage(file, "properties");
 }
 
 export async function uploadProjectImage(file) {
-  return uploadImageToBucket(file, PROJECT_IMAGES_BUCKET);
+  return uploadImage(file, "projects");
 }
 
-export async function deleteProjectImageFromStorage(imageUrl) {
-  return deleteImageFromStorage(imageUrl, PROJECT_IMAGES_BUCKET);
+export async function uploadVideo(file, type) {
+  if (!["social", "presentation"].includes(type)) {
+    throw new Error("Neplatný typ videa.");
+  }
+  validateVideoFile(file);
+  const data = await uploadMedia(file, type);
+  const url = typeof data?.url === "string" ? data.url.trim() : "";
+  if (!url) {
+    throw new Error("Server nevrátil URL nahraného videa.");
+  }
+  return data;
+}
+
+export async function deletePropertyImageFromStorage() {
+  return { skipped: true, reason: "server_managed" };
+}
+
+export async function deleteProjectImageFromStorage() {
+  return { skipped: true, reason: "server_managed" };
 }

@@ -1,118 +1,93 @@
-import { supabase } from "./config.js";
+import { apiFetch, getToken, setToken } from "./api.js";
 
 export const LOGIN_PATH = "login.html";
 export const DASHBOARD_PATH = "dashboard.html";
 
 let authReady = false;
 let authReadyPromise = null;
+let currentUser = null;
 
-function logSession(label, session) {
-  console.log(`[auth] ${label}`, session);
-  console.log(`[auth] ${label} user id`, session?.user?.id ?? null);
-}
-
-/**
- * Wait until Supabase client has restored session from storage (INITIAL_SESSION).
- * Required before any RLS-protected request on page load.
- */
 export function waitForAuthReady() {
   if (!authReadyPromise) {
-    authReadyPromise = new Promise((resolve) => {
-      let settled = false;
-
-      function finish(event, session) {
-        if (settled) return;
-        settled = true;
+    authReadyPromise = (async () => {
+      const token = getToken();
+      if (!token) {
         authReady = true;
-        logSession(`auth ready (${event})`, session);
-        resolve({ event, session });
+        currentUser = null;
+        return { event: "INITIAL_SESSION", user: null };
       }
 
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-        console.log("[auth] onAuthStateChange", event, session?.user?.id ?? null);
-        logSession("current session (listener)", session);
-
-        if (event === "INITIAL_SESSION") {
-          subscription.unsubscribe();
-          finish(event, session);
-        }
-      });
-    });
+      try {
+        const data = await apiFetch("auth/session");
+        currentUser = data.user;
+        authReady = true;
+        return { event: "INITIAL_SESSION", user: currentUser };
+      } catch {
+        setToken(null);
+        currentUser = null;
+        authReady = true;
+        return { event: "INITIAL_SESSION", user: null };
+      }
+    })();
   }
   return authReadyPromise;
 }
 
-export async function getSession() {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) {
-    console.error("[auth] getSession error:", error);
-    return null;
-  }
-  const session = data.session;
-  logSession("getSession", session);
-  return session;
-}
-
-/** Dashboard: wait for auth ready, redirect to login if no session. */
 export async function requireAuth() {
-  const { session } = await waitForAuthReady();
-  logSession("requireAuth", session);
-
-  if (!session?.user) {
-    console.log("[auth] no session - redirect to login");
+  const { user } = await waitForAuthReady();
+  if (!user) {
     window.location.replace(LOGIN_PATH);
     return null;
   }
-  return session;
+  return { user };
 }
 
-/** Login page: wait for auth ready, redirect to dashboard if already signed in. */
 export async function redirectIfLoggedIn() {
-  const { session } = await waitForAuthReady();
-  if (session?.user) {
-    console.log("[auth] already logged in - redirect to dashboard");
+  const { user } = await waitForAuthReady();
+  if (user) {
     window.location.replace(DASHBOARD_PATH);
   }
 }
 
-/**
- * Before INSERT / UPDATE / DELETE: confirm session is present.
- * Uses Supabase Auth context only (JWT attached automatically by client).
- */
 export async function ensureAuthenticated() {
-  const session = await getSession();
-  if (!session?.user) {
-    console.log("[auth] ensureAuthenticated failed - redirect to login");
+  const token = getToken();
+  if (!token || !currentUser) {
     window.location.replace(LOGIN_PATH);
     return null;
   }
-  return session;
+  return { user: currentUser };
 }
 
+const listeners = new Set();
+
 export function onAuthStateChange(handler) {
-  return supabase.auth.onAuthStateChange((event, session) => {
-    console.log("[auth] onAuthStateChange", event, session?.user?.id ?? null);
-    handler(event, session);
-  });
+  listeners.add(handler);
+  return () => listeners.delete(handler);
+}
+
+function emitAuthEvent(event) {
+  listeners.forEach((handler) => handler(event, currentUser));
 }
 
 export async function signIn(email, password) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
+  const data = await apiFetch("auth/login", {
+    method: "POST",
+    body: { email, password },
   });
-  if (error) throw error;
 
-  logSession("signIn result", data.session);
-
-  if (!data.session?.user) {
-    throw new Error("Přihlášení proběhlo, ale session nebyla vytvořena.");
-  }
-
+  setToken(data.token);
+  currentUser = data.user;
+  emitAuthEvent("SIGNED_IN");
   return data;
 }
 
 export async function signOut() {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
+  try {
+    await apiFetch("auth/logout", { method: "POST", body: {} });
+  } catch {
+    // ignore
+  }
+  setToken(null);
+  currentUser = null;
+  emitAuthEvent("SIGNED_OUT");
 }

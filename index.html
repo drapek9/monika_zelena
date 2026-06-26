@@ -159,45 +159,18 @@
             <p class="lead">Neprodávám jen prostor. Prodávám pocit domova.</p>
           </div>
           <div
-            class="presentation-videos-slider property-home-slider"
+            class="presentation-videos-slider"
             id="presentation-videos-slider"
             data-reveal
             aria-label="Ukázková videa"
           >
-            <button type="button" class="t-nav-btn t-nav-btn--edge" id="presentation-v-prev" aria-label="Předchozí video">←</button>
-            <div class="testimonial-viewport" id="presentation-videos-viewport">
-              <div class="testimonial-track" id="presentation-videos-track">
-                <div
-                  class="presentation-video presentation-video--placeholder"
-                  role="img"
-                  aria-label="Místo pro ukázkové video 1 (formát jako YouTube)"
-                >
-                  <span class="presentation-video__ph-visual" aria-hidden="true"></span>
-                </div>
-                <div
-                  class="presentation-video presentation-video--placeholder"
-                  role="img"
-                  aria-label="Místo pro ukázkové video 2 (formát jako YouTube)"
-                >
-                  <span class="presentation-video__ph-visual" aria-hidden="true"></span>
-                </div>
-                <div
-                  class="presentation-video presentation-video--placeholder"
-                  role="img"
-                  aria-label="Místo pro ukázkové video 3 (formát jako YouTube)"
-                >
-                  <span class="presentation-video__ph-visual" aria-hidden="true"></span>
-                </div>
-                <div
-                  class="presentation-video presentation-video--placeholder"
-                  role="img"
-                  aria-label="Místo pro ukázkové video 4 (formát jako YouTube)"
-                >
-                  <span class="presentation-video__ph-visual" aria-hidden="true"></span>
-                </div>
-              </div>
+            <div class="presentation-videos-slider__nav">
+              <button type="button" class="t-nav-btn" id="presentation-v-prev" aria-controls="presentation-videos-viewport" aria-label="Předchozí video">←</button>
+              <button type="button" class="t-nav-btn" id="presentation-v-next" aria-controls="presentation-videos-viewport" aria-label="Další video">→</button>
             </div>
-            <button type="button" class="t-nav-btn t-nav-btn--edge" id="presentation-v-next" aria-label="Další video">→</button>
+            <div class="testimonial-viewport" id="presentation-videos-viewport">
+              <div class="testimonial-track" id="presentation-videos-track"></div>
+            </div>
           </div>
           <div class="presentation-services" data-reveal>
             <div class="feature-mini">
@@ -392,12 +365,7 @@
               role="region"
               aria-label="Videa ze sociálních sítí - posuv šipkami nebo kolečkem"
             >
-              <div class="social-videos-row">
-                <video controls playsinline preload="metadata" src="videa/jedna.mp4" title="Ukázka 1"></video>
-                <video controls playsinline preload="metadata" src="videa/dva.mp4" title="Ukázka 2"></video>
-                <video controls playsinline preload="metadata" src="videa/tri.mp4" title="Ukázka 3"></video>
-                <video controls playsinline preload="metadata" src="videa/ctyri.mp4" title="Ukázka 4"></video>
-              </div>
+              <div class="social-videos-row" id="social-videos-row"></div>
             </div>
           </div>
         </div>

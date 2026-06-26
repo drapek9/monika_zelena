@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="cs">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Videa | Admin</title>
+    <link rel="stylesheet" href="css/admin.css" />
+  </head>
+  <body class="admin-body">
+    <div class="admin-wrap">
+      <header class="admin-header">
+        <div>
+          <h1>Správa videí</h1>
+          <p class="admin-user" id="user-email"></p>
+        </div>
+        <button type="button" class="admin-btn admin-btn--ghost" id="logout-btn">
+          Odhlásit se
+        </button>
+      </header>
+
+      <nav class="admin-nav" aria-label="Sekce administrace">
+        <a href="dashboard.html" class="admin-btn admin-btn--ghost admin-btn--sm">Nemovitosti</a>
+        <a href="projects.html" class="admin-btn admin-btn--ghost admin-btn--sm">Projekty</a>
+        <a href="reviews.html" class="admin-btn admin-btn--ghost admin-btn--sm">Recenze</a>
+        <a href="videos.html" class="admin-btn admin-btn--primary admin-btn--sm is-active">Videa</a>
+      </nav>
+
+      <section class="admin-section admin-card" aria-labelledby="upload-heading">
+        <h2 id="upload-heading">Nahrát video</h2>
+        <p class="admin-hint" id="upload-hint">
+          Videa pro sekci „Aktuálně na sociálních sítích“ na úvodní stránce.
+        </p>
+        <div id="form-success" class="admin-alert admin-alert--success" hidden role="status"></div>
+        <div id="form-error" class="admin-alert admin-alert--error" hidden role="alert"></div>
+
+        <form id="video-upload-form" class="admin-form">
+          <div class="admin-field admin-field--wide">
+            <label for="video-file">Soubor videa *</label>
+            <input
+              type="file"
+              id="video-file"
+              name="video-file"
+              accept="video/mp4,video/webm,video/quicktime,video/x-m4v,.mp4,.webm,.mov,.m4v"
+              required
+            />
+            <p class="admin-hint">Max. 100 MB · MP4, WebM, MOV, M4V</p>
+          </div>
+          <div class="admin-form-actions">
+            <button type="submit" class="admin-btn admin-btn--primary" id="upload-submit">
+              Nahrát video
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="admin-section admin-card" aria-labelledby="list-heading">
+        <h2 id="list-heading">Seznam videí</h2>
+
+        <div class="admin-toolbar">
+          <div class="admin-filter" role="group" aria-label="Typ videa">
+            <button type="button" class="is-active" data-type="social">Sociální sítě</button>
+            <button type="button" data-type="presentation">Prezentace</button>
+          </div>
+          <button type="button" class="admin-btn admin-btn--ghost admin-btn--sm" id="refresh-btn">
+            Obnovit
+          </button>
+        </div>
+
+        <div id="list-error" class="admin-alert admin-alert--error" hidden role="alert"></div>
+        <div id="list-loading" class="admin-loading">Načítám…</div>
+        <div id="list-empty" class="admin-empty" hidden>Žádná videa k zobrazení.</div>
+
+        <div class="admin-video-grid" id="video-grid" hidden></div>
+      </section>
+
+      <p class="admin-credit">
+        Admin vytvořil
+        <a href="https://simondrapal.cz/" target="_blank" rel="noopener noreferrer">Šimon Drápal</a>
+      </p>
+    </div>
+
+    <script type="module" src="js/videos.js"></script>
+  </body>
+</html>

@@ -968,18 +968,21 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 }
 
 .presentation-videos-slider {
-  display: block;
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.65rem;
   width: 100%;
-  padding-inline: clamp(2.75rem, 6vw, 3.5rem);
+  min-width: 0;
 }
 
-/* Šipky karuselu – stejné bílé tlačítka jako u „Všechny nemovitosti“ */
-#prezentace .presentation-videos-slider .t-nav-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 2;
+.presentation-videos-slider__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.presentation-videos-slider__nav .t-nav-btn {
   width: 48px;
   height: 48px;
   border: 1.5px solid rgba(72, 72, 72, 0.32);
@@ -993,14 +996,13 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
     0 1px 4px rgba(72, 72, 72, 0.1);
 }
 
-#prezentace .presentation-videos-slider .t-nav-btn:first-of-type {
-  left: 0;
+.presentation-videos-slider__nav .t-nav-btn[hidden] {
+  display: none !important;
 }
 
-#prezentace .presentation-videos-slider .t-nav-btn:last-of-type {
-  right: 0;
+.presentation-videos-slider__nav:not(:has(.t-nav-btn:not([hidden]))) {
+  display: none;
 }
-
 
 #prezentace .presentation-videos-slider .testimonial-viewport,
 #prezentace .presentation-videos-slider .testimonial-track {
@@ -1008,8 +1010,30 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   background: transparent;
 }
 
+#prezentace .presentation-videos-slider .testimonial-viewport {
+  width: 100%;
+}
+
 #presentation-videos-track {
   gap: clamp(1rem, 2.5vw, 1.75rem);
+}
+
+.presentation-videos-slider--empty {
+  padding-inline: 0;
+}
+
+.presentation-videos-slider--empty .presentation-videos-slider__nav {
+  display: none;
+}
+
+.presentation-videos-empty {
+  width: 100%;
+  margin: 0;
+  padding: clamp(4rem, 10vw, 6rem) 1.5rem;
+  text-align: center;
+  font-size: clamp(1.05rem, 2vw, 1.2rem);
+  line-height: 1.5;
+  color: var(--c-soft);
 }
 
 .presentation-video {
@@ -1023,6 +1047,14 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   background: #0a0a0a;
   border: none;
   box-shadow: none;
+}
+
+.presentation-video video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  background: #0a0a0a;
 }
 
 .presentation-video--placeholder {
@@ -1683,7 +1715,7 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   }
 
   .property-home-slider .t-nav-btn:hover:not(:disabled),
-  #prezentace .presentation-videos-slider .t-nav-btn:hover:not(:disabled),
+  .presentation-videos-slider__nav .t-nav-btn:hover:not(:disabled),
   .social-videos-slider__nav .t-nav-btn:hover:not(:disabled) {
     border-color: var(--c-accent);
     background: var(--c-white);
@@ -1700,7 +1732,7 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 }
 
 .property-home-slider .t-nav-btn:active:not(:disabled),
-#prezentace .presentation-videos-slider .t-nav-btn:active:not(:disabled),
+.presentation-videos-slider__nav .t-nav-btn:active:not(:disabled),
 .social-videos-slider__nav .t-nav-btn:active:not(:disabled) {
   border-color: var(--c-accent);
   background: var(--c-white);

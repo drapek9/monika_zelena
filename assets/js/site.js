@@ -247,18 +247,28 @@ function initStats() {
   });
 }
 
-/* ----- Properties (Supabase) ----- */
-let _supabaseClient = null;
+/* ----- Properties (PHP API) ----- */
 let _propertiesCatalogPromise = null;
 
-async function getSupabase() {
-  if (_supabaseClient) return _supabaseClient;
-  const { createClient } = await import(
-    "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
-  );
-  const { SUPABASE_URL, SUPABASE_ANON_KEY } = await import("./supabase-config.js");
-  _supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  return _supabaseClient;
+function buildApiUrl(path) {
+  const qIndex = path.indexOf("?");
+  const route = qIndex >= 0 ? path.slice(0, qIndex) : path;
+  const params = new URLSearchParams(qIndex >= 0 ? path.slice(qIndex + 1) : "");
+  params.set("route", route);
+  params.set("_", Date.now().toString(36));
+  return `/api/index.php?${params.toString()}`;
+}
+
+async function fetchApiJson(path) {
+  const response = await fetch(buildApiUrl(path), {
+    cache: "no-store",
+    headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+  return data;
 }
 
 function mapPropertyFromDb(row) {
@@ -298,14 +308,7 @@ function normalizePropertyStatus(row) {
 }
 
 async function fetchPropertiesCatalog() {
-  const supabase = await getSupabase();
-  const { data, error } = await supabase
-    .from("properties")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-
+  const data = await fetchApiJson("properties");
   const all = (data || []).map(mapPropertyFromDb);
   return {
     all,
@@ -323,14 +326,7 @@ function getPropertiesCatalog() {
 
 async function fetchPropertyById(id) {
   if (!id) return null;
-  const supabase = await getSupabase();
-  const { data, error } = await supabase
-    .from("properties")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (error) throw error;
+  const data = await fetchApiJson(`properties?id=${encodeURIComponent(id)}`);
   return data ? mapPropertyFromDb(data) : null;
 }
 
@@ -523,7 +519,7 @@ async function initPropertiesPage() {
   });
 }
 
-/* ----- Sold (Supabase) ----- */
+/* ----- Sold (PHP API) ----- */
 async function loadSold(selector) {
   const root = document.querySelector(selector);
   if (!root) return;
@@ -538,7 +534,7 @@ async function loadSold(selector) {
   }
 }
 
-/* ----- Projects (Supabase) ----- */
+/* ----- Projects (PHP API) ----- */
 let _projectsPromise = null;
 
 function mapProjectFromDb(row) {
@@ -564,13 +560,7 @@ function getRealizedProjects(projects) {
 }
 
 async function fetchProjects() {
-  const supabase = await getSupabase();
-  const { data, error } = await supabase
-    .from("projects")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
+  const data = await fetchApiJson("projects");
   return (data || []).map(mapProjectFromDb);
 }
 
@@ -938,6 +928,133 @@ function scheduleCarouselRelayoutOnReveal(sliderWrap, relayout) {
   io.observe(sliderWrap);
 }
 
+function escapeAttr(str) {
+  return String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;");
+}
+
+/* ----- Videa ze složek na serveru (PHP API) ----- */
+const _videosPromises = {};
+
+function isLocalDevHost() {
+  const host = window.location.hostname;
+  return host === "localhost" || host === "127.0.0.1";
+}
+
+async function loadLocalVideosFallback(type) {
+  try {
+    const res = await fetch("data/videos-local.json", { cache: "no-store" });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data?.[type]) ? data[type] : [];
+  } catch {
+    return [];
+  }
+}
+
+async function fetchVideosCatalog(type) {
+  try {
+    return await fetchApiJson(`videos?type=${encodeURIComponent(type)}`);
+  } catch (error) {
+    if (isLocalDevHost()) {
+      console.warn(
+        `[videos] API nedostupné (${error?.message || error}) – lokální fallback z data/videos-local.json`
+      );
+      return loadLocalVideosFallback(type);
+    }
+    throw error;
+  }
+}
+
+function getVideosCatalog(type) {
+  if (!_videosPromises[type]) {
+    _videosPromises[type] = fetchVideosCatalog(type);
+  }
+  return _videosPromises[type];
+}
+
+function renderPresentationVideo(video) {
+  const title = escapeAttr(video.name || "Ukázkové video");
+  const src = escapeAttr(video.url);
+  return `<div class="presentation-video">
+    <video controls playsinline preload="metadata" src="${src}" title="${title}"></video>
+  </div>`;
+}
+
+function renderPresentationEmptyState() {
+  return `<p class="presentation-videos-empty" role="status">Zatím žádné video</p>`;
+}
+
+function setPresentationVideosEmptyState(presSlider, presTrack) {
+  if (presSlider) {
+    presSlider.hidden = false;
+    presSlider.classList.add("presentation-videos-slider--empty");
+  }
+  if (presTrack) {
+    presTrack.innerHTML = renderPresentationEmptyState();
+  }
+  document.getElementById("presentation-v-prev")?.setAttribute("hidden", "");
+  document.getElementById("presentation-v-next")?.setAttribute("hidden", "");
+}
+
+function renderSocialVideo(video) {
+  const title = escapeAttr(video.name || "Ukázkové video");
+  const src = escapeAttr(video.url);
+  return `<video controls playsinline preload="metadata" src="${src}" title="${title}"></video>`;
+}
+
+async function initHomeVideosSections() {
+  const presSlider = document.getElementById("presentation-videos-slider");
+  const presTrack = document.getElementById("presentation-videos-track");
+  const socialStrip = document.querySelector(".social-videos-strip");
+  const socialRow = document.getElementById("social-videos-row");
+
+  if (!presTrack && !socialRow) return;
+
+  try {
+    const [presentationVideos, socialVideos] = await Promise.all([
+      getVideosCatalog("presentation").catch(() => []),
+      getVideosCatalog("social").catch(() => []),
+    ]);
+
+    const hasPresentation = presentationVideos.length > 0;
+    const hasSocial = socialVideos.length > 0;
+
+    if (presSlider) {
+      presSlider.hidden = false;
+      presSlider.classList.toggle("presentation-videos-slider--empty", !hasPresentation);
+    }
+    if (socialStrip) socialStrip.hidden = !hasSocial;
+
+    if (presTrack) {
+      presTrack.innerHTML = hasPresentation
+        ? presentationVideos.map(renderPresentationVideo).join("")
+        : renderPresentationEmptyState();
+    }
+    if (socialRow) {
+      socialRow.innerHTML = hasSocial ? socialVideos.map(renderSocialVideo).join("") : "";
+    }
+
+    const presPrev = document.getElementById("presentation-v-prev");
+    const presNext = document.getElementById("presentation-v-next");
+    if (presPrev) presPrev.hidden = !hasPresentation;
+    if (presNext) presNext.hidden = !hasPresentation;
+
+    if (hasPresentation) {
+      initPresentationVideosCarousel();
+    }
+    if (hasSocial) {
+      initSocialVideosCarousel();
+    }
+  } catch (e) {
+    console.error("Videos load error:", e);
+    setPresentationVideosEmptyState(presSlider, presTrack);
+    if (socialStrip) socialStrip.hidden = true;
+  }
+}
+
 function initPresentationVideosCarousel() {
   const sliderWrap = document.getElementById("presentation-videos-slider");
   const viewport = document.getElementById("presentation-videos-viewport");
@@ -947,10 +1064,12 @@ function initPresentationVideosCarousel() {
   if (!viewport || !track) return;
 
   const items = [...track.querySelectorAll(".presentation-video")];
-  if (items.length < 2) return;
+  if (!items.length) return;
 
-  track.innerHTML = buildInfiniteTrackHtml(items, (el) => el.outerHTML, true);
-  void viewport.offsetWidth;
+  if (items.length >= 2) {
+    track.innerHTML = buildInfiniteTrackHtml(items, (el) => el.outerHTML, true);
+    void viewport.offsetWidth;
+  }
 
   const carousel = initInfiniteCarousel({
     viewport,
@@ -975,7 +1094,7 @@ function buildInfiniteTrackHtml(items, renderItem, duplicate) {
   return duplicate && items.length >= 2 ? cardHtml + cardHtml : cardHtml;
 }
 
-/* ----- Recenze (Supabase) ----- */
+/* ----- Recenze (PHP API) ----- */
 let _reviewsPromise = null;
 
 function mapReviewFromDb(row) {
@@ -987,13 +1106,7 @@ function mapReviewFromDb(row) {
 }
 
 async function fetchReviews() {
-  const supabase = await getSupabase();
-  const { data, error } = await supabase
-    .from("reviews")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
+  const data = await fetchApiJson("reviews");
   return (data || []).map(mapReviewFromDb);
 }
 
@@ -1354,7 +1467,7 @@ function initSocialVideosCarousel() {
   const nextBtn = document.getElementById("social-v-next");
   if (!viewport) return;
 
-  const row = viewport.querySelector(".social-videos-row");
+  const row = document.getElementById("social-videos-row") || viewport.querySelector(".social-videos-row");
   if (!row) return;
 
   const getVideos = () => [...row.querySelectorAll("video")];
@@ -2240,8 +2353,7 @@ async function boot() {
     await loadHomeDevSection();
     await loadServices("#services-grid-home", 4);
     await loadTestimonials();
-    initPresentationVideosCarousel();
-    initSocialVideosCarousel();
+    await initHomeVideosSections();
     if (window.location.hash) scrollToHashTarget();
   }
 

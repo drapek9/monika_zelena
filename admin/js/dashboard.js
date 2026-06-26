@@ -1,4 +1,4 @@
-import { supabase } from "./config.js";
+import { apiFetch } from "./api.js";
 import {
   requireAuth,
   ensureAuthenticated,
@@ -339,19 +339,15 @@ async function loadProperties() {
   listEmptyEl.hidden = true;
   tableWrapEl.hidden = true;
 
-  const { data, error } = await supabase
-    .from("properties")
-    .select("*")
-    .order("name", { ascending: true });
-
-  listLoadingEl.hidden = true;
-
-  if (error) {
+  try {
+    const data = await apiFetch("properties");
+    listLoadingEl.hidden = true;
+    allProperties = data ?? [];
+  } catch (error) {
+    listLoadingEl.hidden = true;
     showListError("Nepodařilo se načíst nemovitosti: " + error.message);
     return;
   }
-
-  allProperties = data ?? [];
 
   if (editingId && !allProperties.some((p) => p.id === editingId)) {
     cancelEdit();
@@ -369,15 +365,16 @@ async function updatePropertyStatus(id, status, selectEl) {
   const previous = normalizePropertyStatus(allProperties.find((p) => p.id === id) || {});
   selectEl.disabled = true;
 
-  const { error } = await supabase.from("properties").update({ status }).eq("id", id);
-
-  selectEl.disabled = false;
-
-  if (error) {
+  try {
+    await apiFetch(`properties/${id}`, { method: "PUT", body: { status } });
+  } catch (error) {
+    selectEl.disabled = false;
     selectEl.value = previous;
     alert("Chyba při změně stavu: " + error.message);
     return;
   }
+
+  selectEl.disabled = false;
 
   const item = allProperties.find((p) => p.id === id);
   if (item) item.status = status;
@@ -396,9 +393,9 @@ async function deleteProperty(prop) {
   );
   if (!confirmed) return;
 
-  const { error } = await supabase.from("properties").delete().eq("id", prop.id);
-
-  if (error) {
+  try {
+    await apiFetch(`properties/${prop.id}`, { method: "DELETE" });
+  } catch (error) {
     alert("Chyba při mazání: " + error.message);
     return;
   }
@@ -466,19 +463,23 @@ propertyForm.addEventListener("submit", async (e) => {
 
   formSubmitBtn.textContent = isEdit ? "Ukládám změny…" : "Ukládám…";
 
-  const { error } = isEdit
-    ? await supabase.from("properties").update(payload).eq("id", editingId)
-    : await supabase.from("properties").insert(payload);
-
-  formSubmitBtn.disabled = false;
-  formSubmitBtn.textContent = isEdit ? "Uložit změny" : "Uložit nemovitost";
-
-  if (error) {
+  try {
+    if (isEdit) {
+      await apiFetch(`properties/${editingId}`, { method: "PUT", body: payload });
+    } else {
+      await apiFetch("properties", { method: "POST", body: payload });
+    }
+  } catch (error) {
+    formSubmitBtn.disabled = false;
+    formSubmitBtn.textContent = isEdit ? "Uložit změny" : "Uložit nemovitost";
     formErrorEl.textContent =
       (isEdit ? "Úprava se nezdařila: " : "Uložení se nezdařilo: ") + error.message;
     formErrorEl.hidden = false;
     return;
   }
+
+  formSubmitBtn.disabled = false;
+  formSubmitBtn.textContent = isEdit ? "Uložit změny" : "Uložit nemovitost";
 
   if (isEdit && editingImageUrl && imageValue !== editingImageUrl) {
     try {

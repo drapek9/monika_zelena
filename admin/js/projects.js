@@ -1,4 +1,4 @@
-import { supabase } from "./config.js";
+import { apiFetch } from "./api.js";
 import {
   requireAuth,
   ensureAuthenticated,
@@ -224,7 +224,7 @@ function cancelEdit() {
   formCancelBtn.hidden = true;
   projectFormSection.classList.remove("is-editing");
   imageHint.textContent =
-    "Vložte URL, nebo nahrajte soubor do úložiště Supabase (project_images).";
+    "Vložte URL, nebo nahrajte soubor na server.";
   projectForm.reset();
   updateDescriptionLength();
   setImageMode("url");
@@ -295,20 +295,16 @@ async function loadProjects() {
   listEmptyEl.hidden = true;
   tableWrapEl.hidden = true;
 
-  const { data, error } = await supabase
-    .from("projects")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  listLoadingEl.hidden = true;
-
-  if (error) {
+  try {
+    const data = await apiFetch("projects");
+    listLoadingEl.hidden = true;
+    allProjects = data ?? [];
+  } catch (error) {
+    listLoadingEl.hidden = true;
     listErrorEl.textContent = "Nepodařilo se načíst projekty: " + error.message;
     listErrorEl.hidden = false;
     return;
   }
-
-  allProjects = data ?? [];
 
   if (editingId && !allProjects.some((p) => p.id === editingId)) {
     cancelEdit();
@@ -325,15 +321,16 @@ async function updateProjectStatus(id, status, selectEl) {
 
   if (selectEl) selectEl.disabled = true;
 
-  const { error } = await supabase.from("projects").update({ status }).eq("id", id);
-
-  if (selectEl) selectEl.disabled = false;
-
-  if (error) {
+  try {
+    await apiFetch(`projects/${id}`, { method: "PUT", body: { status } });
+  } catch (error) {
+    if (selectEl) selectEl.disabled = false;
     alert("Stav se nepodařilo uložit: " + error.message);
     renderTable();
     return;
   }
+
+  if (selectEl) selectEl.disabled = false;
 
   const item = allProjects.find((p) => p.id === id);
   if (item) item.status = status;
@@ -351,9 +348,9 @@ async function deleteProject(project) {
   );
   if (!confirmed) return;
 
-  const { error } = await supabase.from("projects").delete().eq("id", project.id);
-
-  if (error) {
+  try {
+    await apiFetch(`projects/${project.id}`, { method: "DELETE" });
+  } catch (error) {
     alert("Chyba při mazání: " + error.message);
     return;
   }
@@ -415,19 +412,23 @@ projectForm.addEventListener("submit", async (e) => {
 
   formSubmitBtn.textContent = isEdit ? "Ukládám změny…" : "Ukládám…";
 
-  const { error } = isEdit
-    ? await supabase.from("projects").update(payload).eq("id", editingId)
-    : await supabase.from("projects").insert(payload);
-
-  formSubmitBtn.disabled = false;
-  formSubmitBtn.textContent = isEdit ? "Uložit změny" : "Uložit projekt";
-
-  if (error) {
+  try {
+    if (isEdit) {
+      await apiFetch(`projects/${editingId}`, { method: "PUT", body: payload });
+    } else {
+      await apiFetch("projects", { method: "POST", body: payload });
+    }
+  } catch (error) {
+    formSubmitBtn.disabled = false;
+    formSubmitBtn.textContent = isEdit ? "Uložit změny" : "Uložit projekt";
     formErrorEl.textContent =
       (isEdit ? "Úprava se nezdařila: " : "Uložení se nezdařilo: ") + error.message;
     formErrorEl.hidden = false;
     return;
   }
+
+  formSubmitBtn.disabled = false;
+  formSubmitBtn.textContent = isEdit ? "Uložit změny" : "Uložit projekt";
 
   if (isEdit && editingImageUrl && imageValue !== editingImageUrl) {
     try {
