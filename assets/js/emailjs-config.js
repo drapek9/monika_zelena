@@ -24,7 +24,7 @@
 export const EMAILJS_PUBLIC_KEY = "bN5Y8oC1J4WPax-aN";
 
 /** ID e-mailové služby (Email Services). */
-export const EMAILJS_SERVICE_ID = "service_js59njc";
+export const EMAILJS_SERVICE_ID = "service_t9vaxmr";
 
 /** ID šablon (Email Templates). lead a estimate sdílí jednu šablonu. */
 export const EMAILJS_TEMPLATES = {
