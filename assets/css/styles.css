@@ -1011,11 +1011,42 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 }
 
 #prezentace .presentation-videos-slider .testimonial-viewport {
+  --social-video-h: clamp(300px, 40vw, 540px);
   width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  outline: none;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+#prezentace .presentation-videos-slider .testimonial-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+#prezentace .presentation-videos-slider .testimonial-viewport:focus-visible {
+  box-shadow: 0 0 0 2px var(--c-white), 0 0 0 4px var(--c-accent);
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #prezentace .presentation-videos-slider .testimonial-viewport {
+    scroll-behavior: auto;
+  }
 }
 
 #presentation-videos-track {
-  gap: clamp(1rem, 2.5vw, 1.75rem);
+  gap: 0.75rem 1rem;
+  align-items: flex-end;
+  width: max-content;
+  min-height: var(--social-video-h);
+  padding-block: 2px;
+  transition: none;
+  transform: none !important;
+  will-change: auto;
 }
 
 .presentation-videos-slider--empty {
@@ -1037,24 +1068,30 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 }
 
 .presentation-video {
-  width: 100%;
+  flex: 0 0 auto;
+  width: auto;
   border-radius: 12px;
   overflow: hidden;
-  aspect-ratio: 16 / 9;
 }
 
 #prezentace .presentation-video {
-  background: #0a0a0a;
+  background: transparent;
   border: none;
   box-shadow: none;
 }
 
 .presentation-video video {
-  width: 100%;
-  height: 100%;
+  height: var(--social-video-h);
+  width: auto;
+  max-width: none;
   display: block;
-  object-fit: cover;
-  background: #0a0a0a;
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  object-fit: contain;
+  object-position: center;
+  background-color: #e5e4e0;
+  box-shadow: 0 12px 40px rgba(23, 23, 23, 0.06);
 }
 
 .presentation-video--placeholder {
@@ -1474,9 +1511,6 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   align-items: stretch;
 }
 
-#presentation-videos-track {
-  align-items: stretch;
-}
 
 .card-grid > .property-card,
 #property-home-track > .property-card,
@@ -2725,7 +2759,8 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
     margin-inline: 0;
     width: 100%;
   }
-  .social-videos-viewport {
+  .social-videos-viewport,
+  #prezentace .presentation-videos-slider .testimonial-viewport {
     --social-video-h: clamp(280px, 48vw, 480px);
   }
   .footer-grid {
@@ -2814,7 +2849,8 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   .social-masonry {
     grid-auto-rows: 120px;
   }
-  .social-videos-viewport {
+  .social-videos-viewport,
+  #prezentace .presentation-videos-slider .testimonial-viewport {
     --social-video-h: min(52vh, 520px);
   }
 

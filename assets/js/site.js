@@ -1056,37 +1056,207 @@ async function initHomeVideosSections() {
 }
 
 function initPresentationVideosCarousel() {
-  const sliderWrap = document.getElementById("presentation-videos-slider");
-  const viewport = document.getElementById("presentation-videos-viewport");
-  const track = document.getElementById("presentation-videos-track");
-  const prev = document.getElementById("presentation-v-prev");
-  const next = document.getElementById("presentation-v-next");
-  if (!viewport || !track) return;
+  initPortraitVideosScrollCarousel({
+    viewportId: "presentation-videos-viewport",
+    rowId: "presentation-videos-track",
+    prevId: "presentation-v-prev",
+    nextId: "presentation-v-next",
+    itemSelector: ".presentation-video",
+  });
+}
 
-  const items = [...track.querySelectorAll(".presentation-video")];
-  if (!items.length) return;
+/* ----- Portrétní videa - horizontální posuv (prezentace, sociální sítě) ----- */
+function initPortraitVideosScrollCarousel({
+  viewportId,
+  rowId,
+  prevId,
+  nextId,
+  itemSelector = "video",
+}) {
+  const viewport = document.getElementById(viewportId);
+  const prevBtn = document.getElementById(prevId);
+  const nextBtn = document.getElementById(nextId);
+  if (!viewport) return;
 
-  if (items.length >= 2) {
-    track.innerHTML = buildInfiniteTrackHtml(items, (el) => el.outerHTML, true);
-    void viewport.offsetWidth;
+  const row = document.getElementById(rowId) || viewport.querySelector(".social-videos-row, .testimonial-track");
+  if (!row) return;
+
+  const getItems = () => [...row.querySelectorAll(itemSelector)];
+
+  /** Umožní dojet na konec tak, že poslední položka zůstane vlevo. */
+  function syncEndPadding() {
+    const items = getItems();
+    if (!items.length) {
+      row.style.removeProperty("padding-right");
+      return;
+    }
+    const last = items[items.length - 1];
+    const pad = Math.max(0, viewport.clientWidth - last.offsetWidth);
+    row.style.paddingRight = `${pad}px`;
   }
 
-  const carousel = initInfiniteCarousel({
-    viewport,
-    track,
-    prev,
-    next,
-    items,
-    cardSelector: ".presentation-video",
-    minItemsToLoop: 2,
-    getVisibleCount: () => (window.innerWidth < 540 ? 1 : 2),
+  function maxScrollLeft() {
+    return Math.max(0, viewport.scrollWidth - viewport.clientWidth);
+  }
+
+  /** Index poslední položky celé viditelné při daném scrollLeft. */
+  function lastFullyVisibleIndex(scrollLeft) {
+    const items = getItems();
+    const vw = viewport.clientWidth;
+    const eps = 2;
+    let last = -1;
+
+    for (let i = 0; i < items.length; i++) {
+      const relLeft = items[i].offsetLeft - scrollLeft;
+      const relRight = relLeft + items[i].offsetWidth;
+      if (relLeft < -eps) continue;
+      if (relRight <= vw + eps) last = i;
+      else break;
+    }
+
+    return last;
+  }
+
+  /**
+   * Každá stránka = offsetLeft položky zarovnané vlevo (levá položka vždy celá),
+   * na konci maxScrollLeft (poslední položka vlevo).
+   */
+  function getPageScrollTargets() {
+    const items = getItems();
+    const maxSL = maxScrollLeft();
+    if (!items.length) return [0];
+    if (maxSL <= 0) return [0];
+
+    const targets = [0];
+    let scrollLeft = 0;
+    const eps = 6;
+
+    while (scrollLeft < maxSL - eps) {
+      const last = lastFullyVisibleIndex(scrollLeft);
+
+      if (last < 0) {
+        if (maxSL > scrollLeft + eps && targets[targets.length - 1] !== maxSL) {
+          targets.push(maxSL);
+        }
+        break;
+      }
+
+      const nextIdx = last + 1;
+      if (nextIdx >= items.length) break;
+
+      if (nextIdx >= items.length - 1) {
+        if (targets[targets.length - 1] !== maxSL) targets.push(maxSL);
+        break;
+      }
+
+      const nextLeft = items[nextIdx].offsetLeft;
+      if (nextLeft <= scrollLeft + eps) break;
+
+      targets.push(nextLeft);
+      scrollLeft = nextLeft;
+    }
+
+    if (targets[targets.length - 1] !== maxSL) {
+      targets.push(maxSL);
+    }
+
+    return targets;
+  }
+
+  function anchorPage() {
+    const targets = getPageScrollTargets();
+    const sl = viewport.scrollLeft;
+    let best = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i < targets.length; i++) {
+      const dist = Math.abs(sl - targets[i]);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  function scrollToPage(page) {
+    const targets = getPageScrollTargets();
+    if (!targets.length) return;
+    const left = Math.round(
+      targets[Math.min(targets.length - 1, Math.max(0, page))]
+    );
+    viewport.scrollTo({ left, behavior: "auto" });
+  }
+
+  function isAtStart() {
+    return viewport.scrollLeft <= 6;
+  }
+
+  function isAtEnd() {
+    const eps = 6;
+    const { clientWidth, scrollWidth } = viewport;
+    const targets = getPageScrollTargets();
+    if (scrollWidth <= clientWidth + eps) return true;
+    if (targets.length <= 1) return true;
+    return viewport.scrollLeft >= targets[targets.length - 1] - eps;
+  }
+
+  function go(delta) {
+    if (delta < 0 && isAtStart()) return;
+    if (delta > 0 && isAtEnd()) return;
+    const targets = getPageScrollTargets();
+    if (!targets.length) return;
+    const page = anchorPage();
+    scrollToPage(Math.min(targets.length - 1, Math.max(0, page + delta)));
+  }
+
+  prevBtn?.addEventListener("click", () => go(-1));
+  nextBtn?.addEventListener("click", () => go(1));
+
+  function snapToNearestPage() {
+    const targets = getPageScrollTargets();
+    const page = anchorPage();
+    const target = targets[page];
+    if (target == null) return;
+    if (Math.abs(viewport.scrollLeft - target) > 2) {
+      viewport.scrollTo({ left: Math.round(target), behavior: "auto" });
+    }
+  }
+
+  viewport.addEventListener("scrollend", snapToNearestPage);
+
+  const ro = new ResizeObserver(() => {
+    syncEndPadding();
+    scrollToPage(anchorPage());
+  });
+  ro.observe(viewport);
+
+  viewport.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      go(-1);
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      go(1);
+    }
   });
 
-  if (carousel && sliderWrap) {
-    const relayout = () => carousel.relayout();
-    requestAnimationFrame(() => requestAnimationFrame(relayout));
-    scheduleCarouselRelayoutOnReveal(sliderWrap, relayout);
-  }
+  row.querySelectorAll("video").forEach((v) => {
+    v.addEventListener("loadedmetadata", () => {
+      syncEndPadding();
+      scrollToPage(anchorPage());
+    });
+  });
+  syncEndPadding();
+}
+
+/* ----- Sociální videa - posuv po stránkách (jako janhlavon.cz) ----- */
+function initSocialVideosCarousel() {
+  initPortraitVideosScrollCarousel({
+    viewportId: "social-videos-viewport",
+    rowId: "social-videos-row",
+    prevId: "social-v-prev",
+    nextId: "social-v-next",
+  });
 }
 
 function buildInfiniteTrackHtml(items, renderItem, duplicate) {
@@ -1458,184 +1628,6 @@ async function loadHomeDevSection() {
     console.error("Projects home load error:", e);
     grid.innerHTML = `<p role="alert">Projekty se nepodařilo načíst.</p>`;
   }
-}
-
-/* ----- Sociální videa - posuv po stránkách (jako janhlavon.cz) ----- */
-function initSocialVideosCarousel() {
-  const viewport = document.getElementById("social-videos-viewport");
-  const prevBtn = document.getElementById("social-v-prev");
-  const nextBtn = document.getElementById("social-v-next");
-  if (!viewport) return;
-
-  const row = document.getElementById("social-videos-row") || viewport.querySelector(".social-videos-row");
-  if (!row) return;
-
-  const getVideos = () => [...row.querySelectorAll("video")];
-
-  /** Umožní dojet na konec tak, že poslední video zůstane vlevo (jako janhlavon.cz). */
-  function syncEndPadding() {
-    const videos = getVideos();
-    if (!videos.length) {
-      row.style.removeProperty("padding-right");
-      return;
-    }
-    const last = videos[videos.length - 1];
-    const pad = Math.max(0, viewport.clientWidth - last.offsetWidth);
-    row.style.paddingRight = `${pad}px`;
-  }
-
-  function maxScrollLeft() {
-    return Math.max(0, viewport.scrollWidth - viewport.clientWidth);
-  }
-
-  /** Index posledního videa celého viditelného při daném scrollLeft. */
-  function lastFullyVisibleIndex(scrollLeft) {
-    const videos = getVideos();
-    const vw = viewport.clientWidth;
-    const eps = 2;
-    let last = -1;
-
-    for (let i = 0; i < videos.length; i++) {
-      const relLeft = videos[i].offsetLeft - scrollLeft;
-      const relRight = relLeft + videos[i].offsetWidth;
-      if (relLeft < -eps) continue;
-      if (relRight <= vw + eps) last = i;
-      else break;
-    }
-
-    return last;
-  }
-
-  /**
-   * Každá stránka = offsetLeft videa zarovnaného vlevo (levé video vždy celé),
-   * na konci maxScrollLeft (poslední video vlevo).
-   */
-  function getPageScrollTargets() {
-    const videos = getVideos();
-    const maxSL = maxScrollLeft();
-    if (!videos.length) return [0];
-    if (maxSL <= 0) return [0];
-
-    const targets = [0];
-    let scrollLeft = 0;
-    const eps = 6;
-
-    while (scrollLeft < maxSL - eps) {
-      const last = lastFullyVisibleIndex(scrollLeft);
-
-      if (last < 0) {
-        if (maxSL > scrollLeft + eps && targets[targets.length - 1] !== maxSL) {
-          targets.push(maxSL);
-        }
-        break;
-      }
-
-      const nextIdx = last + 1;
-      if (nextIdx >= videos.length) break;
-
-      if (nextIdx >= videos.length - 1) {
-        if (targets[targets.length - 1] !== maxSL) targets.push(maxSL);
-        break;
-      }
-
-      const nextLeft = videos[nextIdx].offsetLeft;
-      if (nextLeft <= scrollLeft + eps) break;
-
-      targets.push(nextLeft);
-      scrollLeft = nextLeft;
-    }
-
-    if (targets[targets.length - 1] !== maxSL) {
-      targets.push(maxSL);
-    }
-
-    return targets;
-  }
-
-  function anchorPage() {
-    const targets = getPageScrollTargets();
-    const sl = viewport.scrollLeft;
-    let best = 0;
-    let bestDist = Infinity;
-    for (let i = 0; i < targets.length; i++) {
-      const dist = Math.abs(sl - targets[i]);
-      if (dist < bestDist) {
-        bestDist = dist;
-        best = i;
-      }
-    }
-    return best;
-  }
-
-  function scrollToPage(page) {
-    const targets = getPageScrollTargets();
-    if (!targets.length) return;
-    const left = Math.round(
-      targets[Math.min(targets.length - 1, Math.max(0, page))]
-    );
-    viewport.scrollTo({ left, behavior: "auto" });
-  }
-
-  function isAtStart() {
-    return viewport.scrollLeft <= 6;
-  }
-
-  function isAtEnd() {
-    const eps = 6;
-    const { clientWidth, scrollWidth } = viewport;
-    const targets = getPageScrollTargets();
-    if (scrollWidth <= clientWidth + eps) return true;
-    if (targets.length <= 1) return true;
-    return viewport.scrollLeft >= targets[targets.length - 1] - eps;
-  }
-
-  function go(delta) {
-    if (delta < 0 && isAtStart()) return;
-    if (delta > 0 && isAtEnd()) return;
-    const targets = getPageScrollTargets();
-    if (!targets.length) return;
-    const page = anchorPage();
-    scrollToPage(Math.min(targets.length - 1, Math.max(0, page + delta)));
-  }
-
-  prevBtn?.addEventListener("click", () => go(-1));
-  nextBtn?.addEventListener("click", () => go(1));
-
-  function snapToNearestPage() {
-    const targets = getPageScrollTargets();
-    const page = anchorPage();
-    const target = targets[page];
-    if (target == null) return;
-    if (Math.abs(viewport.scrollLeft - target) > 2) {
-      viewport.scrollTo({ left: Math.round(target), behavior: "auto" });
-    }
-  }
-
-  viewport.addEventListener("scrollend", snapToNearestPage);
-
-  const ro = new ResizeObserver(() => {
-    syncEndPadding();
-    scrollToPage(anchorPage());
-  });
-  ro.observe(viewport);
-
-  viewport.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowLeft") {
-      e.preventDefault();
-      go(-1);
-    } else if (e.key === "ArrowRight") {
-      e.preventDefault();
-      go(1);
-    }
-  });
-
-  getVideos().forEach((v) => {
-    v.addEventListener("loadedmetadata", () => {
-      syncEndPadding();
-      scrollToPage(anchorPage());
-    });
-  });
-  syncEndPadding();
 }
 
 /* ----- Video lightbox ----- */
