@@ -5,6 +5,7 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime", "video/x-m4v"];
 const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+const VIDEO_TYPES = ["social", "presentation_portrait", "presentation_landscape"];
 
 function validateImageFile(file) {
   if (!file) throw new Error("Nebyl vybrán žádný soubor.");
@@ -55,11 +56,14 @@ export async function uploadProjectImage(file) {
 }
 
 export async function uploadVideo(file, type) {
-  if (!["social", "presentation"].includes(type)) {
+  if (!VIDEO_TYPES.includes(type)) {
     throw new Error("Neplatný typ videa.");
   }
   validateVideoFile(file);
-  const data = await uploadMedia(file, type);
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("bucket", type);
+  const data = await apiFetch("upload", { method: "POST", body: formData });
   const url = typeof data?.url === "string" ? data.url.trim() : "";
   if (!url) {
     throw new Error("Server nevrátil URL nahraného videa.");

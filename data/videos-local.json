@@ -5,5 +5,19 @@
     { "url": "/videa/tri.mp4", "name": "tri" },
     { "url": "/videa/ctyri.mp4", "name": "ctyri" }
   ],
-  "presentation": []
+  "presentation_portrait": [
+    {
+      "url": "/videa-prezentace-na-vysku/jedna.mp4",
+      "name": "jedna",
+      "orientation": "portrait"
+    }
+  ],
+  "presentation_landscape": [
+    {
+      "url": "/videa-prezentace/snapsave-app_927878052763500_hd.mp4",
+      "name": "prezentace",
+      "filename": "snapsave-app_927878052763500_hd.mp4",
+      "orientation": "landscape"
+    }
+  ]
 }

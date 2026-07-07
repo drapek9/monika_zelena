@@ -315,6 +315,7 @@ body.admin-body {
 
 .admin-filter {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.25rem;
   padding: 3px;
   background: var(--admin-bg);
@@ -534,8 +535,16 @@ body.admin-body {
 }
 
 .admin-video-card__preview {
-  aspect-ratio: 16 / 9;
   background: #111;
+}
+
+.admin-video-card__preview--landscape {
+  aspect-ratio: 16 / 9;
+}
+
+.admin-video-card__preview--portrait {
+  aspect-ratio: 9 / 16;
+  max-height: 280px;
 }
 
 .admin-video-card__preview video {
@@ -566,6 +575,36 @@ body.admin-body {
   font-size: 0.78rem;
   color: var(--admin-muted);
   word-break: break-all;
+}
+
+.admin-video-card__badge {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--admin-accent, #c9a227);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.admin-video-card__orientation {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.admin-video-card__orientation-label {
+  font-size: 0.78rem;
+  color: var(--admin-muted);
+}
+
+.admin-video-card__orientation-select {
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-bg);
+  color: inherit;
+  font: inherit;
 }
 
 .admin-video-card .admin-btn {

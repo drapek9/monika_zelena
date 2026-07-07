@@ -38,6 +38,7 @@ try {
         preg_match('#^reviews/(\d+)$#', $path, $m) && $method === 'DELETE' => handle_reviews_delete((int) $m[1]),
         $path === 'upload' && $method === 'POST' => handle_upload(),
         $path === 'videos' && $method === 'GET' => handle_videos_list(),
+        $path === 'videos' && $method === 'PUT' => handle_videos_update(),
         $path === 'videos' && $method === 'DELETE' => handle_videos_delete(),
         default => json_error('Endpoint nenalezen.', 404),
     };
@@ -362,8 +363,8 @@ function handle_videos_list(): void
     global $CONFIG;
 
     $type = trim((string) ($_GET['type'] ?? 'social'));
-    if (!in_array($type, ['social', 'presentation'], true)) {
-        json_error('Neplatný typ videa (social / presentation).', 400);
+    if (!in_array($type, allowed_video_types(), true)) {
+        json_error('Neplatný typ videa.', 400);
     }
 
     $videosCfg = $CONFIG['videos'][$type] ?? null;
@@ -377,7 +378,8 @@ function handle_videos_list(): void
         json_response([]);
     }
 
-    json_response(list_videos_in_directory($dir, $urlPrefix));
+    $videos = list_videos_in_directory($dir, $urlPrefix);
+    json_response(enrich_videos_for_type($type, $videos));
 }
 
 function list_videos_in_directory(string $dir, string $urlPrefix): array
@@ -431,8 +433,8 @@ function handle_videos_delete(): void
     require_auth();
 
     $type = trim((string) ($_GET['type'] ?? ''));
-    if (!in_array($type, ['social', 'presentation'], true)) {
-        json_error('Neplatný typ videa (social / presentation).', 400);
+    if (!in_array($type, allowed_video_types(), true)) {
+        json_error('Neplatný typ videa.', 400);
     }
 
     $filename = basename((string) ($_GET['filename'] ?? ''));
@@ -455,7 +457,40 @@ function handle_videos_delete(): void
         json_error('Smazání souboru se nezdařilo.', 500);
     }
 
+    remove_video_manifest_entry(video_manifest_type($type), $filename);
+
     json_response(['ok' => true]);
+}
+
+function handle_videos_update(): void
+{
+    require_auth();
+
+    $type = trim((string) ($_GET['type'] ?? ''));
+    if (!in_array($type, ['presentation', 'presentation_landscape'], true)) {
+        json_error('Orientaci lze měnit jen u širokých prezentačních videí.', 400);
+    }
+
+    $filename = basename((string) ($_GET['filename'] ?? ''));
+    if ($filename === '' || preg_match('/[\/\\\\]/', $filename)) {
+        json_error('Neplatný název souboru.', 400);
+    }
+
+    $orientation = normalize_video_orientation(read_json_body()['orientation'] ?? null);
+    if ($orientation === null) {
+        json_error('Neplatná orientace (portrait / landscape).', 400);
+    }
+
+    $cfg = video_config($type);
+    $dir = rtrim((string) ($cfg['dir'] ?? ''), DIRECTORY_SEPARATOR);
+    $path = $dir . DIRECTORY_SEPARATOR . $filename;
+    if (!is_file($path)) {
+        json_error('Video nenalezeno.', 404);
+    }
+
+    set_video_manifest_entry(video_manifest_type($type), $filename, ['orientation' => $orientation]);
+
+    json_response(['ok' => true, 'orientation' => $orientation]);
 }
 
 function handle_upload(): void
@@ -463,8 +498,8 @@ function handle_upload(): void
     require_auth();
 
     $bucket = trim((string) ($_POST['bucket'] ?? $_GET['bucket'] ?? 'properties'));
-    if (in_array($bucket, ['social', 'presentation'], true)) {
-        handle_video_upload($bucket);
+    if (is_video_upload_bucket($bucket)) {
+        handle_video_upload(normalize_video_upload_bucket($bucket));
         return;
     }
 
@@ -563,9 +598,16 @@ function handle_video_upload(string $type): void
     $urlPrefix = rtrim((string) ($cfg['url_prefix'] ?? ''), '/');
     $url = $urlPrefix . '/' . rawurlencode($filename);
 
-    json_response([
+    $response = [
         'url' => $url,
         'name' => (string) pathinfo($filename, PATHINFO_FILENAME),
         'filename' => $filename,
-    ], 201);
+    ];
+
+    $orientation = default_video_orientation($type);
+    if ($orientation !== null) {
+        $response['orientation'] = $orientation;
+    }
+
+    json_response($response, 201);
 }

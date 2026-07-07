@@ -159,23 +159,74 @@
             <p class="lead">Neprodávám jen prostor. Prodávám pocit domova.</p>
           </div>
           <div
-            class="presentation-videos-slider"
+            class="presentation-videos-slider presentation-videos-slider--portrait"
             id="presentation-videos-slider"
             data-reveal
+            hidden
             aria-label="Ukázková videa"
           >
-            <div class="presentation-videos-slider__nav">
-              <button type="button" class="t-nav-btn" id="presentation-v-prev" aria-controls="presentation-videos-viewport" aria-label="Předchozí video">←</button>
-              <button type="button" class="t-nav-btn" id="presentation-v-next" aria-controls="presentation-videos-viewport" aria-label="Další video">→</button>
+            <div class="presentation-videos-toolbar">
+              <div class="presentation-videos-slider__nav">
+                <button type="button" class="t-nav-btn" id="presentation-v-prev" aria-controls="presentation-portrait-viewport" aria-label="Předchozí video">←</button>
+                <button type="button" class="t-nav-btn" id="presentation-v-next" aria-controls="presentation-portrait-viewport" aria-label="Další video">→</button>
+              </div>
+              <div
+                class="presentation-orientation-switch"
+                id="presentation-orientation-switch"
+                role="group"
+                aria-label="Formát videa"
+                hidden
+              >
+                <button
+                  type="button"
+                  class="presentation-orientation-switch__btn is-active"
+                  data-orientation="portrait"
+                  aria-pressed="true"
+                >
+                  Na výšku
+                </button>
+                <button
+                  type="button"
+                  class="presentation-orientation-switch__btn"
+                  data-orientation="landscape"
+                  aria-pressed="false"
+                >
+                  Na šířku
+                </button>
+              </div>
             </div>
-            <div
-              class="testimonial-viewport"
-              id="presentation-videos-viewport"
-              tabindex="0"
-              role="region"
-              aria-label="Ukázková videa - posuv šipkami nebo kolečkem"
-            >
-              <div class="testimonial-track" id="presentation-videos-track"></div>
+            <div class="presentation-videos-panels">
+              <div
+                class="presentation-videos-panel presentation-videos-panel--portrait is-active"
+                id="presentation-portrait-panel"
+                data-orientation="portrait"
+              >
+                <div
+                  class="testimonial-viewport"
+                  id="presentation-portrait-viewport"
+                  tabindex="0"
+                  role="region"
+                  aria-label="Videa na výšku - posuv šipkami nebo kolečkem"
+                >
+                  <div class="testimonial-track" id="presentation-portrait-track"></div>
+                </div>
+              </div>
+              <div
+                class="presentation-videos-panel presentation-videos-panel--landscape"
+                id="presentation-landscape-panel"
+                data-orientation="landscape"
+                hidden
+              >
+                <div
+                  class="testimonial-viewport"
+                  id="presentation-landscape-viewport"
+                  tabindex="0"
+                  role="region"
+                  aria-label="Široká videa - posuv šipkami nebo kolečkem"
+                >
+                  <div class="testimonial-track" id="presentation-landscape-track"></div>
+                </div>
+              </div>
             </div>
           </div>
           <div class="presentation-services" data-reveal>

@@ -955,17 +955,25 @@ async function loadLocalVideosFallback(type) {
 }
 
 async function fetchVideosCatalog(type) {
+  let apiVideos = null;
+
   try {
-    return await fetchApiJson(`videos?type=${encodeURIComponent(type)}`);
-  } catch (error) {
-    if (isLocalDevHost()) {
-      console.warn(
-        `[videos] API nedostupné (${error?.message || error}) – lokální fallback z data/videos-local.json`
-      );
-      return loadLocalVideosFallback(type);
+    apiVideos = await fetchApiJson(`videos?type=${encodeURIComponent(type)}`);
+    if (Array.isArray(apiVideos) && apiVideos.length > 0) {
+      return apiVideos;
     }
-    throw error;
+  } catch (error) {
+    console.warn(`[videos] API pro „${type}“: ${error?.message || error}`);
   }
+
+  if (isLocalDevHost()) {
+    const localVideos = await loadLocalVideosFallback(type);
+    if (localVideos.length > 0) {
+      return localVideos;
+    }
+  }
+
+  return Array.isArray(apiVideos) ? apiVideos : [];
 }
 
 function getVideosCatalog(type) {
@@ -975,28 +983,216 @@ function getVideosCatalog(type) {
   return _videosPromises[type];
 }
 
-function renderPresentationVideo(video) {
+function normalizePresentationOrientation(value) {
+  return value === "portrait" || value === "landscape" ? value : null;
+}
+
+function orientationFromVideoDimensions(width, height) {
+  if (!width || !height) return "landscape";
+  return height > width * 1.02 ? "portrait" : "landscape";
+}
+
+function applyPresentationVideoOrientation(wrapper, orientation) {
+  const next = normalizePresentationOrientation(orientation);
+  if (!wrapper || !next) return;
+
+  wrapper.classList.remove("presentation-video--portrait", "presentation-video--landscape");
+  wrapper.classList.add(`presentation-video--${next}`);
+  wrapper.dataset.orientation = next;
+  wrapper.dispatchEvent(
+    new CustomEvent("presentation-video-oriented", { bubbles: true, detail: { orientation: next } })
+  );
+}
+
+function classifyPresentationVideoWrapper(wrapper) {
+  const preset = normalizePresentationOrientation(wrapper.dataset.orientation);
+  if (preset) {
+    applyPresentationVideoOrientation(wrapper, preset);
+    return Promise.resolve(preset);
+  }
+
+  const video = wrapper.querySelector("video");
+  if (!video) {
+    applyPresentationVideoOrientation(wrapper, "landscape");
+    return Promise.resolve("landscape");
+  }
+
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const finish = (orientation) => {
+      if (settled) return;
+      settled = true;
+      applyPresentationVideoOrientation(wrapper, orientation);
+      resolve(orientation);
+    };
+
+    const timer = window.setTimeout(() => finish("landscape"), 4000);
+
+    const onMeta = () => {
+      window.clearTimeout(timer);
+      finish(orientationFromVideoDimensions(video.videoWidth, video.videoHeight));
+    };
+
+    if (video.readyState >= 1) {
+      window.clearTimeout(timer);
+      onMeta();
+      return;
+    }
+
+    video.addEventListener("loadedmetadata", onMeta, { once: true });
+    video.addEventListener("error", () => finish("landscape"), { once: true });
+  });
+}
+
+function preparePresentationVideos(track, forcedOrientation = null) {
+  const wrappers = [...track.querySelectorAll(".presentation-video")];
+  if (!wrappers.length) return Promise.resolve();
+
+  if (forcedOrientation) {
+    wrappers.forEach((wrapper) => applyPresentationVideoOrientation(wrapper, forcedOrientation));
+    return Promise.resolve();
+  }
+
+  return Promise.all(wrappers.map((wrapper) => classifyPresentationVideoWrapper(wrapper)));
+}
+
+function renderPresentationVideo(video, forcedOrientation = null) {
   const title = escapeAttr(video.name || "Ukázkové video");
   const src = escapeAttr(video.url);
-  return `<div class="presentation-video">
+  const orientation =
+    normalizePresentationOrientation(forcedOrientation) ||
+    normalizePresentationOrientation(video.orientation);
+  const orientationAttr = orientation ? ` data-orientation="${orientation}"` : "";
+  const orientationClass = orientation ? ` presentation-video--${orientation}` : "";
+
+  return `<div class="presentation-video${orientationClass}"${orientationAttr}>
     <video controls playsinline preload="metadata" src="${src}" title="${title}"></video>
   </div>`;
 }
 
-function renderPresentationEmptyState() {
-  return `<p class="presentation-videos-empty" role="status">Zatím žádné video</p>`;
+function renderPresentationGroup(track, videos, orientation) {
+  if (!track) return;
+  track.innerHTML = videos.length
+    ? videos.map((video) => renderPresentationVideo(video, orientation)).join("")
+    : "";
 }
 
-function setPresentationVideosEmptyState(presSlider, presTrack) {
-  if (presSlider) {
-    presSlider.hidden = false;
-    presSlider.classList.add("presentation-videos-slider--empty");
-  }
-  if (presTrack) {
-    presTrack.innerHTML = renderPresentationEmptyState();
-  }
+function setPresentationVideosEmptyState() {
+  const slider = document.getElementById("presentation-videos-slider");
+  if (slider) slider.hidden = false;
+
+  const portraitTrack = document.getElementById("presentation-portrait-track");
+  const landscapeTrack = document.getElementById("presentation-landscape-track");
+  if (portraitTrack) portraitTrack.innerHTML = "";
+  if (landscapeTrack) landscapeTrack.innerHTML = "";
+
   document.getElementById("presentation-v-prev")?.setAttribute("hidden", "");
   document.getElementById("presentation-v-next")?.setAttribute("hidden", "");
+}
+
+async function initPresentationVideosSwitcher({ portraitVideos, landscapeVideos }) {
+  const slider = document.getElementById("presentation-videos-slider");
+  const switchEl = document.getElementById("presentation-orientation-switch");
+  const portraitPanel = document.getElementById("presentation-portrait-panel");
+  const landscapePanel = document.getElementById("presentation-landscape-panel");
+  const portraitTrack = document.getElementById("presentation-portrait-track");
+  const landscapeTrack = document.getElementById("presentation-landscape-track");
+  const prevBtn = document.getElementById("presentation-v-prev");
+  const nextBtn = document.getElementById("presentation-v-next");
+  const switchBtns = switchEl ? [...switchEl.querySelectorAll("[data-orientation]")] : [];
+
+  const hasPortrait = portraitVideos.length > 0;
+  const hasLandscape = landscapeVideos.length > 0;
+  const hasPresentation = hasPortrait || hasLandscape;
+
+  if (!slider) return;
+
+  slider.hidden = !hasPresentation;
+  if (!hasPresentation) return;
+
+  if (switchEl) switchEl.hidden = false;
+
+  switchBtns.forEach((btn) => {
+    const orientation = btn.dataset.orientation;
+    const enabled = orientation === "portrait" ? hasPortrait : hasLandscape;
+    btn.disabled = !enabled;
+    btn.hidden = false;
+    btn.setAttribute("aria-disabled", enabled ? "false" : "true");
+  });
+
+  const carousels = {};
+  const defaultOrientation = hasPortrait ? "portrait" : "landscape";
+  let activeOrientation = defaultOrientation;
+
+  if (hasPortrait) {
+    renderPresentationGroup(portraitTrack, portraitVideos, "portrait");
+    await preparePresentationVideos(portraitTrack, "portrait");
+    carousels.portrait = initPortraitVideosScrollCarousel({
+      viewportId: "presentation-portrait-viewport",
+      rowId: "presentation-portrait-track",
+      itemSelector: ".presentation-video",
+    });
+  }
+
+  if (hasLandscape) {
+    renderPresentationGroup(landscapeTrack, landscapeVideos, "landscape");
+    await preparePresentationVideos(landscapeTrack, "landscape");
+    carousels.landscape = initPortraitVideosScrollCarousel({
+      viewportId: "presentation-landscape-viewport",
+      rowId: "presentation-landscape-track",
+      itemSelector: ".presentation-video",
+    });
+  }
+
+  function setPresentationOrientation(orientation) {
+    if (!carousels[orientation]) return;
+
+    activeOrientation = orientation;
+
+    if (portraitPanel) {
+      const isPortrait = orientation === "portrait";
+      portraitPanel.hidden = !isPortrait;
+      portraitPanel.classList.toggle("is-active", isPortrait);
+    }
+    if (landscapePanel) {
+      const isLandscape = orientation === "landscape";
+      landscapePanel.hidden = !isLandscape;
+      landscapePanel.classList.toggle("is-active", isLandscape);
+    }
+
+    slider.classList.toggle("presentation-videos-slider--portrait", orientation === "portrait");
+    slider.classList.toggle("presentation-videos-slider--landscape", orientation === "landscape");
+
+    switchBtns.forEach((btn) => {
+      const isActive = btn.dataset.orientation === orientation;
+      btn.classList.toggle("is-active", isActive);
+      btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+
+    const viewportId =
+      orientation === "portrait" ? "presentation-portrait-viewport" : "presentation-landscape-viewport";
+    prevBtn?.setAttribute("aria-controls", viewportId);
+    nextBtn?.setAttribute("aria-controls", viewportId);
+
+    carousels[orientation]?.relayout();
+  }
+
+  switchBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const orientation = btn.dataset.orientation;
+      if (!orientation || btn.disabled || orientation === activeOrientation) return;
+      setPresentationOrientation(orientation);
+    });
+  });
+
+  prevBtn?.addEventListener("click", () => carousels[activeOrientation]?.go(-1));
+  nextBtn?.addEventListener("click", () => carousels[activeOrientation]?.go(1));
+
+  if (prevBtn) prevBtn.hidden = false;
+  if (nextBtn) nextBtn.hidden = false;
+
+  setPresentationOrientation(defaultOrientation);
 }
 
 function renderSocialVideo(video) {
@@ -1006,63 +1202,35 @@ function renderSocialVideo(video) {
 }
 
 async function initHomeVideosSections() {
-  const presSlider = document.getElementById("presentation-videos-slider");
-  const presTrack = document.getElementById("presentation-videos-track");
   const socialStrip = document.querySelector(".social-videos-strip");
   const socialRow = document.getElementById("social-videos-row");
-
-  if (!presTrack && !socialRow) return;
+  const hasPresentationSection = document.getElementById("presentation-videos-slider");
+  if (!hasPresentationSection && !socialRow) return;
 
   try {
-    const [presentationVideos, socialVideos] = await Promise.all([
-      getVideosCatalog("presentation").catch(() => []),
+    const [portraitVideos, landscapeVideos, socialVideos] = await Promise.all([
+      getVideosCatalog("presentation_portrait").catch(() => []),
+      getVideosCatalog("presentation_landscape").catch(() => []),
       getVideosCatalog("social").catch(() => []),
     ]);
 
-    const hasPresentation = presentationVideos.length > 0;
     const hasSocial = socialVideos.length > 0;
 
-    if (presSlider) {
-      presSlider.hidden = false;
-      presSlider.classList.toggle("presentation-videos-slider--empty", !hasPresentation);
-    }
-    if (socialStrip) socialStrip.hidden = !hasSocial;
+    await initPresentationVideosSwitcher({ portraitVideos, landscapeVideos });
 
-    if (presTrack) {
-      presTrack.innerHTML = hasPresentation
-        ? presentationVideos.map(renderPresentationVideo).join("")
-        : renderPresentationEmptyState();
-    }
+    if (socialStrip) socialStrip.hidden = !hasSocial;
     if (socialRow) {
       socialRow.innerHTML = hasSocial ? socialVideos.map(renderSocialVideo).join("") : "";
     }
 
-    const presPrev = document.getElementById("presentation-v-prev");
-    const presNext = document.getElementById("presentation-v-next");
-    if (presPrev) presPrev.hidden = !hasPresentation;
-    if (presNext) presNext.hidden = !hasPresentation;
-
-    if (hasPresentation) {
-      initPresentationVideosCarousel();
-    }
     if (hasSocial) {
       initSocialVideosCarousel();
     }
   } catch (e) {
     console.error("Videos load error:", e);
-    setPresentationVideosEmptyState(presSlider, presTrack);
+    setPresentationVideosEmptyState();
     if (socialStrip) socialStrip.hidden = true;
   }
-}
-
-function initPresentationVideosCarousel() {
-  initPortraitVideosScrollCarousel({
-    viewportId: "presentation-videos-viewport",
-    rowId: "presentation-videos-track",
-    prevId: "presentation-v-prev",
-    nextId: "presentation-v-next",
-    itemSelector: ".presentation-video",
-  });
 }
 
 /* ----- Portrétní videa - horizontální posuv (prezentace, sociální sítě) ----- */
@@ -1076,10 +1244,10 @@ function initPortraitVideosScrollCarousel({
   const viewport = document.getElementById(viewportId);
   const prevBtn = document.getElementById(prevId);
   const nextBtn = document.getElementById(nextId);
-  if (!viewport) return;
+  if (!viewport) return null;
 
   const row = document.getElementById(rowId) || viewport.querySelector(".social-videos-row, .testimonial-track");
-  if (!row) return;
+  if (!row) return null;
 
   const getItems = () => [...row.querySelectorAll(itemSelector)];
 
@@ -1240,6 +1408,11 @@ function initPortraitVideosScrollCarousel({
     }
   });
 
+  row.addEventListener("presentation-video-oriented", () => {
+    syncEndPadding();
+    scrollToPage(anchorPage());
+  });
+
   row.querySelectorAll("video").forEach((v) => {
     v.addEventListener("loadedmetadata", () => {
       syncEndPadding();
@@ -1247,6 +1420,14 @@ function initPortraitVideosScrollCarousel({
     });
   });
   syncEndPadding();
+
+  return {
+    go,
+    relayout: () => {
+      syncEndPadding();
+      scrollToPage(anchorPage());
+    },
+  };
 }
 
 /* ----- Sociální videa - posuv po stránkách (jako janhlavon.cz) ----- */

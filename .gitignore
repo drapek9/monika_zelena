@@ -13,6 +13,10 @@ videa-prezentace/*
 !videa-prezentace/.gitkeep
 !videa-prezentace/.htaccess
 
+videa-prezentace-na-vysku/*
+!videa-prezentace-na-vysku/.gitkeep
+!videa-prezentace-na-vysku/.htaccess
+
 .env
 .env.*
 *.log

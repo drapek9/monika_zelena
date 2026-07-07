@@ -33,6 +33,16 @@ return [
             'url_prefix' => '/videa',
             'max_bytes' => 100 * 1024 * 1024,
         ],
+        'presentation_portrait' => [
+            'dir' => __DIR__ . '/../videa-prezentace-na-vysku',
+            'url_prefix' => '/videa-prezentace-na-vysku',
+            'max_bytes' => 100 * 1024 * 1024,
+        ],
+        'presentation_landscape' => [
+            'dir' => __DIR__ . '/../videa-prezentace',
+            'url_prefix' => '/videa-prezentace',
+            'max_bytes' => 100 * 1024 * 1024,
+        ],
         'presentation' => [
             'dir' => __DIR__ . '/../videa-prezentace',
             'url_prefix' => '/videa-prezentace',

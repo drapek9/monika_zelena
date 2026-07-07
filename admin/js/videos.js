@@ -32,13 +32,24 @@ let allVideos = [];
 
 const TYPE_HINTS = {
   social: "Videa pro sekci „Aktuálně na sociálních sítích“ na úvodní stránce.",
-  presentation: "Videa pro sekci „Profesionální prezentace, která prodává“ na úvodní stránce.",
+  presentation_portrait: "Videa na výšku pro sekci „Profesionální prezentace, která prodává“.",
+  presentation_landscape: "Videa na šířku pro sekci „Profesionální prezentace, která prodává“.",
+};
+
+const TYPE_LABELS = {
+  social: "Sociální sítě",
+  presentation_portrait: "Prezentace – na výšku",
+  presentation_landscape: "Prezentace – na šířku",
 };
 
 function setPageEnabled(enabled) {
   if (!adminWrap) return;
   adminWrap.style.opacity = enabled ? "1" : "0.5";
   adminWrap.style.pointerEvents = enabled ? "" : "none";
+}
+
+function previewClassForType(type) {
+  return type === "presentation_landscape" ? "landscape" : "portrait";
 }
 
 setPageEnabled(false);
@@ -88,14 +99,16 @@ function createVideoCard(video) {
 
   const filename = video.filename || video.url?.split("/").pop() || "";
   const title = video.name || filename;
+  const previewClass = previewClassForType(currentType);
 
   card.innerHTML = `
-    <div class="admin-video-card__preview">
+    <div class="admin-video-card__preview admin-video-card__preview--${previewClass}">
       <video controls playsinline preload="metadata" src="${escapeHtml(video.url)}" title="${escapeHtml(title)}"></video>
     </div>
     <div class="admin-video-card__body">
       <p class="admin-video-card__title">${escapeHtml(title)}</p>
       <p class="admin-video-card__meta">${escapeHtml(filename)}</p>
+      <p class="admin-video-card__badge">${escapeHtml(TYPE_LABELS[currentType] || "")}</p>
       <button type="button" class="admin-btn admin-btn--danger admin-btn--sm delete-btn">Smazat</button>
     </div>
   `;

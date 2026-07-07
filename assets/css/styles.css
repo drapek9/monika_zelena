@@ -967,6 +967,73 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   max-width: 48ch;
 }
 
+.presentation-videos-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  width: 100%;
+  min-height: 48px;
+}
+
+.presentation-orientation-switch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  padding: 0.22rem;
+  border-radius: 999px;
+  border: 1px solid rgba(72, 72, 72, 0.18);
+  background: var(--c-warm);
+}
+
+.presentation-orientation-switch__btn {
+  padding: 0.42rem 0.9rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--c-soft);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    background 0.25s var(--ease-out),
+    color 0.25s var(--ease-out),
+    box-shadow 0.25s var(--ease-out);
+}
+
+.presentation-orientation-switch__btn.is-active {
+  background: var(--c-white);
+  color: var(--c-ink);
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(244, 193, 5, 0.28);
+}
+
+.presentation-orientation-switch__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  .presentation-orientation-switch__btn:hover:not(:disabled):not(.is-active) {
+    color: var(--c-ink);
+    background: rgba(255, 255, 255, 0.55);
+  }
+}
+
+.presentation-videos-panels {
+  width: 100%;
+  min-width: 0;
+}
+
+.presentation-videos-panel[hidden] {
+  display: none !important;
+}
+
 .presentation-videos-slider {
   display: flex;
   flex-direction: column;
@@ -1012,6 +1079,9 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 
 #prezentace .presentation-videos-slider .testimonial-viewport {
   --social-video-h: clamp(300px, 40vw, 540px);
+  --presentation-video-h-portrait: var(--social-video-h);
+  --presentation-video-w-landscape: clamp(300px, 50vw, min(720px, 92vw));
+  --presentation-video-h-landscape: clamp(200px, 26vw, 360px);
   width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
@@ -1038,15 +1108,32 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
   }
 }
 
-#presentation-videos-track {
+#prezentace .presentation-videos-slider--landscape .testimonial-viewport {
+  --presentation-video-h-landscape: clamp(220px, 30vw, 420px);
+}
+
+#prezentace .presentation-videos-slider--portrait .testimonial-viewport {
+  --social-video-h: clamp(300px, 40vw, 540px);
+  --presentation-video-h-portrait: var(--social-video-h);
+}
+
+#presentation-landscape-track,
+#presentation-portrait-track {
   gap: 0.75rem 1rem;
   align-items: flex-end;
   width: max-content;
-  min-height: var(--social-video-h);
   padding-block: 2px;
   transition: none;
   transform: none !important;
   will-change: auto;
+}
+
+#presentation-landscape-track {
+  min-height: var(--presentation-video-h-landscape, clamp(220px, 30vw, 420px));
+}
+
+#presentation-portrait-track {
+  min-height: var(--presentation-video-h-portrait, var(--social-video-h));
 }
 
 .presentation-videos-slider--empty {
@@ -1081,17 +1168,31 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
 }
 
 .presentation-video video {
-  height: var(--social-video-h);
-  width: auto;
-  max-width: none;
   display: block;
   flex: 0 0 auto;
+  height: var(--presentation-video-h-portrait, var(--social-video-h));
+  width: auto;
+  max-width: none;
   scroll-snap-align: start;
   scroll-snap-stop: always;
   object-fit: contain;
-  object-position: center;
+  object-position: center bottom;
   background-color: #e5e4e0;
   box-shadow: 0 12px 40px rgba(23, 23, 23, 0.06);
+}
+
+.presentation-video--portrait video {
+  height: var(--presentation-video-h-portrait, var(--social-video-h));
+  width: auto;
+  max-width: none;
+}
+
+.presentation-video--landscape video {
+  /* U krajiny fixujeme výšku a šířku necháme dopočítat poměrem stran,
+     aby „široká“ videa skutečně vizuálně zabírala více místa. */
+  height: var(--presentation-video-h-landscape, clamp(200px, 26vw, 360px));
+  width: auto;
+  max-width: none;
 }
 
 .presentation-video--placeholder {
@@ -2760,8 +2861,12 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
     width: 100%;
   }
   .social-videos-viewport,
-  #prezentace .presentation-videos-slider .testimonial-viewport {
+  #prezentace .presentation-videos-slider--portrait .testimonial-viewport {
     --social-video-h: clamp(280px, 48vw, 480px);
+  }
+
+  #prezentace .presentation-videos-slider--landscape .testimonial-viewport {
+    --presentation-video-h-landscape: clamp(200px, 34vw, 360px);
   }
   .footer-grid {
     grid-template-columns: 1fr 1fr;
@@ -2850,8 +2955,12 @@ body.has-light-hero .site-header:not(.is-scrolled) .nav-toggle {
     grid-auto-rows: 120px;
   }
   .social-videos-viewport,
-  #prezentace .presentation-videos-slider .testimonial-viewport {
+  #prezentace .presentation-videos-slider--portrait .testimonial-viewport {
     --social-video-h: min(52vh, 520px);
+  }
+
+  #prezentace .presentation-videos-slider--landscape .testimonial-viewport {
+    --presentation-video-h-landscape: min(36vh, 320px);
   }
 
   /* Lead / odhad: typ nemovitosti - tlačítka pod sebou na mobilu */

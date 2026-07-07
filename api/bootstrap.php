@@ -329,7 +329,7 @@ function video_config(string $type): array
 {
     global $CONFIG;
 
-    if (!in_array($type, ['social', 'presentation'], true)) {
+    if (!in_array($type, allowed_video_types(), true)) {
         json_error('Neplatný typ videa.', 400);
     }
 
@@ -339,6 +339,20 @@ function video_config(string $type): array
     }
 
     return $videos[$type];
+}
+
+function allowed_video_types(): array
+{
+    return ['social', 'presentation', 'presentation_portrait', 'presentation_landscape'];
+}
+
+function video_manifest_type(string $type): string
+{
+    if (in_array($type, ['presentation', 'presentation_landscape'], true)) {
+        return 'presentation_landscape';
+    }
+
+    return $type;
 }
 
 function upload_error_message(int $code): string
@@ -384,4 +398,132 @@ function delete_uploaded_image(?string $imageUrl, string $bucket = 'properties')
     if (is_file($path)) {
         @unlink($path);
     }
+}
+
+function normalize_video_orientation(mixed $value): ?string
+{
+    $orientation = is_string($value) ? strtolower(trim($value)) : '';
+
+    return in_array($orientation, ['portrait', 'landscape'], true) ? $orientation : null;
+}
+
+function video_manifest_path(string $type): string
+{
+    $cfg = video_config($type);
+    $dir = rtrim((string) ($cfg['dir'] ?? ''), DIRECTORY_SEPARATOR);
+
+    return $dir . DIRECTORY_SEPARATOR . 'manifest.json';
+}
+
+function read_video_manifest(string $type): array
+{
+    $path = video_manifest_path($type);
+    if (!is_file($path)) {
+        return [];
+    }
+
+    $raw = file_get_contents($path);
+    $data = is_string($raw) ? json_decode($raw, true) : null;
+    $files = $data['files'] ?? null;
+
+    return is_array($files) ? $files : [];
+}
+
+function write_video_manifest(string $type, array $files): void
+{
+    $cfg = video_config($type);
+    $dir = rtrim((string) ($cfg['dir'] ?? ''), DIRECTORY_SEPARATOR);
+    $path = video_manifest_path($type);
+
+    if ($files === []) {
+        if (is_file($path)) {
+            @unlink($path);
+        }
+
+        return;
+    }
+
+    $payload = json_encode(
+        ['files' => $files],
+        JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+    );
+    file_put_contents($path, $payload);
+}
+
+function set_video_manifest_entry(string $type, string $filename, array $entry): void
+{
+    $files = read_video_manifest($type);
+
+    if ($entry === []) {
+        unset($files[$filename]);
+    } else {
+        $files[$filename] = array_merge($files[$filename] ?? [], $entry);
+    }
+
+    write_video_manifest($type, $files);
+}
+
+function remove_video_manifest_entry(string $type, string $filename): void
+{
+    $files = read_video_manifest($type);
+    if (!isset($files[$filename])) {
+        return;
+    }
+
+    unset($files[$filename]);
+    write_video_manifest($type, $files);
+}
+
+function is_video_upload_bucket(string $bucket): bool
+{
+    return in_array($bucket, ['social', 'presentation', 'presentation_portrait', 'presentation_landscape'], true);
+}
+
+function normalize_video_upload_bucket(string $bucket): string
+{
+    if ($bucket === 'presentation') {
+        return 'presentation_landscape';
+    }
+
+    return $bucket;
+}
+
+function default_video_orientation(string $type): ?string
+{
+    return match ($type) {
+        'presentation_portrait' => 'portrait',
+        'presentation_landscape', 'presentation' => 'landscape',
+        default => null,
+    };
+}
+
+function enrich_videos_for_type(string $type, array $videos): array
+{
+    if ($videos === []) {
+        return $videos;
+    }
+
+    $defaultOrientation = default_video_orientation($type);
+    $manifest = in_array($type, ['presentation', 'presentation_landscape'], true)
+        ? read_video_manifest(video_manifest_type($type))
+        : [];
+
+    return array_map(
+        static function (array $video) use ($defaultOrientation, $manifest): array {
+            if ($defaultOrientation !== null) {
+                $video['orientation'] = $defaultOrientation;
+            }
+
+            $filename = (string) ($video['filename'] ?? '');
+            if ($filename !== '' && isset($manifest[$filename])) {
+                $orientation = normalize_video_orientation($manifest[$filename]['orientation'] ?? null);
+                if ($orientation !== null) {
+                    $video['orientation'] = $orientation;
+                }
+            }
+
+            return $video;
+        },
+        $videos
+    );
 }
